@@ -248,7 +248,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
 
         if is_shuffle:
             datasets = datasets.shuffle(
-                100, #self.get_len_dataset(),
+                200, #self.get_len_dataset(),
                 reshuffle_each_iteration=reshuffle_each_iteration,
             )
 

@@ -150,12 +150,18 @@ class TFFastSpeech2(TFFastSpeech):
         training=False,
     ):
         """Call logic."""
+
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
-        embedding_output = tf.concat([embedding_output, bounds], 0)
+        bounds = tf.expand_dims(bounds, axis=-1)
+        embedding_output = tf.concat([embedding_output, bounds], -1)
+
+
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=training
         )
+
         last_encoder_hidden_states = encoder_output[0]
+
 
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
         # rather than just use last_hidden_states of encoder for energy_predictor.

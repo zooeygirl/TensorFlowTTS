@@ -76,8 +76,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
 
     def _train_step(self, batch):
         """Train model one step."""
-        charactor, duration, f0, energy, mel = batch
-        self._one_step_fastspeech2(charactor, duration, f0, energy, mel)
+        charactor, duration, f0, energy, mel, bound = batch
+        self._one_step_fastspeech2(charactor, duration, f0, energy, mel, bound)
 
         # update counts
         self.steps += 1
@@ -92,9 +92,10 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None, 80], dtype=tf.float32),
+            tf.TensorSpec([None, None], dtype=tf.float32),
         ],
     )
-    def _one_step_fastspeech2(self, charactor, duration, f0, energy, mel):
+    def _one_step_fastspeech2(self, charactor, duration, f0, energy, mel, bound):
         with tf.GradientTape() as tape:
             (
                 mel_before,
@@ -109,6 +110,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 duration_gts=duration,
                 f0_gts=f0,
                 energy_gts=energy,
+                bounds=bound,
                 training=True,
             )
             log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
@@ -151,8 +153,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tqdm(self.eval_data_loader, desc="[eval]"), 1
         ):
             # eval one step
-            charactor, duration, f0, energy, mel = batch
-            self._eval_step(charactor, duration, f0, energy, mel)
+            charactor, duration, f0, energy, mel, bound = batch
+            self._eval_step(charactor, duration, f0, energy, mel, bound)
 
             if eval_steps_per_epoch <= self.config["num_save_intermediate_results"]:
                 # save intermedia
@@ -183,6 +185,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None, 80], dtype=tf.float32),
+            tf.TensorSpec([None, None], dtype=tf.float32),
         ],
     )
     def _eval_step(self, charactor, duration, f0, energy, mel):
@@ -200,7 +203,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
-            bounds=bounds,
+            bound=bound,
             training=False,
         )
         log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
@@ -237,9 +240,10 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None, 80], dtype=tf.float32),
+            tf.TensorSpec([None, None], dtype=tf.float32),
         ],
     )
-    def predict(self, charactor, duration, f0, energy, mel, bounds):
+    def predict(self, charactor, duration, f0, energy, mel, bound):
         """Predict."""
         mel_before, mel_after, _, _, _ = self.model(
             charactor,
@@ -248,7 +252,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
-            bounds=bounds,
+            bound=bound,
             training=False,
         )
         return mel_before, mel_after
@@ -258,11 +262,11 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         import matplotlib.pyplot as plt
 
         # unpack input.
-        charactor, duration, f0, energy, mel, bounds = batch
+        charactor, duration, f0, energy, mel, bound = batch
 
         # predict with tf.function.
         masked_mel_before, masked_mel_after = self.predict(
-            charactor, duration, f0, energy, mel, bounds
+            charactor, duration, f0, energy, mel, bound
         )
 
         # check directory
@@ -446,6 +450,8 @@ def main():
         allow_cache=config["allow_cache"],
         batch_size=config["batch_size"],
     )
+
+    #print(list(train_dataset)[0])
 
     valid_dataset = CharactorDurationF0EnergyMelDataset(
         root_dir=args.dev_dir,
