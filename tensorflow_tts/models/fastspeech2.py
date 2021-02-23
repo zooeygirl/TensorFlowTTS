@@ -136,7 +136,7 @@ class TFFastSpeech2(TFFastSpeech):
         bounds = tf.convert_to_tensor(
             [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
         )
-        self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts)
+        self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts, bounds)
 
     def call(
         self,
