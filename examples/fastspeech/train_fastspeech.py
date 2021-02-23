@@ -19,6 +19,7 @@ import logging
 import os
 import sys
 sys.path.append(".")
+sys.path.append("/content/TensorFlowTTS/examples/")
 
 import numpy as np
 import tensorflow as tf
@@ -29,7 +30,7 @@ import tensorflow_tts
 from tqdm import tqdm
 
 from tensorflow_tts.trainers import Seq2SeqBasedTrainer
-from examples.fastspeech.fastspeech_dataset import CharactorDurationMelDataset
+from fastspeech.fastspeech_dataset import CharactorDurationMelDataset
 
 import tensorflow_tts.configs.fastspeech as FASTSPEECH_CONFIG
 

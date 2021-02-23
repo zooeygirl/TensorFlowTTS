@@ -14,12 +14,16 @@
 # limitations under the License.
 """Train FastSpeech2."""
 
+import sys
+sys.path.append(".")
+sys.path.append("/content/TensorFlowTTS/examples/")
+
 from tensorflow_tts.optimizers import AdamWeightDecay
 from tensorflow_tts.optimizers import WarmUp
 from tensorflow_tts.models import TFFastSpeech2
 from tensorflow_tts.configs import FastSpeech2Config
-from examples.fastspeech2.fastspeech2_dataset import CharactorDurationF0EnergyMelDataset
-from examples.fastspeech.train_fastspeech import FastSpeechTrainer
+from fastspeech2.fastspeech2_dataset import CharactorDurationF0EnergyMelDataset
+from fastspeech.train_fastspeech import FastSpeechTrainer
 from tqdm import tqdm
 import tensorflow_tts
 import yaml
@@ -28,8 +32,6 @@ import numpy as np
 import argparse
 import logging
 import os
-import sys
-sys.path.append(".")
 
 
 class FastSpeech2Trainer(FastSpeechTrainer):
