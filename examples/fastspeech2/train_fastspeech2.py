@@ -200,6 +200,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
+            bounds=bounds,
             training=False,
         )
         log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
@@ -238,7 +239,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None, 80], dtype=tf.float32),
         ],
     )
-    def predict(self, charactor, duration, f0, energy, mel):
+    def predict(self, charactor, duration, f0, energy, mel, bounds):
         """Predict."""
         mel_before, mel_after, _, _, _ = self.model(
             charactor,
@@ -247,6 +248,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
+            bounds=bounds,
             training=False,
         )
         return mel_before, mel_after
@@ -256,11 +258,11 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         import matplotlib.pyplot as plt
 
         # unpack input.
-        charactor, duration, f0, energy, mel = batch
+        charactor, duration, f0, energy, mel, bounds = batch
 
         # predict with tf.function.
         masked_mel_before, masked_mel_after = self.predict(
-            charactor, duration, f0, energy, mel
+            charactor, duration, f0, energy, mel, bounds
         )
 
         # check directory

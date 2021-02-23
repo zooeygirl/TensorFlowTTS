@@ -19,6 +19,7 @@ import os
 import random
 import itertools
 import numpy as np
+import pickle
 
 import tensorflow as tf
 
@@ -26,6 +27,9 @@ from tensorflow_tts.datasets.abstract_dataset import AbstractDataset
 
 from tensorflow_tts.utils import find_files
 from tensorflow_tts.utils import remove_outlier
+
+with open('/content/drive/MyDrive/LJSpeech/bounds.pickle', 'rb') as handle:
+    boundInputs = pickle.load(handle)
 
 
 def average_by_duration(x, durs):
@@ -182,6 +186,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         self.energy_stat = np.load(energy_stat)
         self.max_f0_embeddings = max_f0_embeddings
         self.max_energy_embeddings = max_energy_embeddings
+        self.boundInputs = [boundInputs[u] for u in utt_ids]
 
     def get_args(self):
         return [self.utt_ids]
@@ -205,6 +210,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             duration = self.duration_load_fn(duration_file)
             f0 = self.f0_load_fn(f0_file)
             energy = self.energy_load_fn(energy_file)
+            bound = self.boundInputs[i]
 
             duration = tf.concat([duration, [0]],0)
 
@@ -218,9 +224,9 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             energy = tf_average_by_duration(energy, duration)
 
             if self.return_utt_id:
-                items = utt_id, charactor, duration, f0, energy, mel
+                items = utt_id, charactor, duration, f0, energy, mel, bound
             else:
-                items = charactor, duration, f0, energy, mel
+                items = charactor, duration, f0, energy, mel, bound
             yield items
 
     def create(
@@ -242,18 +248,18 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
 
         if is_shuffle:
             datasets = datasets.shuffle(
-                self.get_len_dataset(),
+                100, #self.get_len_dataset(),
                 reshuffle_each_iteration=reshuffle_each_iteration,
             )
 
         datasets = datasets.padded_batch(
-            batch_size, padded_shapes=([None], [None], [None], [None], [None, None])
+            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None])
         )
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)
         return datasets
 
     def get_output_dtypes(self):
-        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32)
+        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32, tf.float32)
         if self.return_utt_id:
             output_types = (tf.dtypes.string, *output_types)
         return output_types
