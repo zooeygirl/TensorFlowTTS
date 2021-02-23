@@ -206,6 +206,8 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             f0 = self.f0_load_fn(f0_file)
             energy = self.energy_load_fn(energy_file)
 
+            duration = tf.concat([duration, [0]],0)
+
             f0 = self._norm_mean_std(f0, self.f0_stat[0], self.f0_stat[1])
             energy = self._norm_mean_std(
                 energy, self.energy_stat[0], self.energy_stat[1]

@@ -133,6 +133,9 @@ class TFFastSpeech2(TFFastSpeech):
         energy_gts = tf.convert_to_tensor(
             [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
         )
+        bounds = tf.convert_to_tensor(
+            [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
+        )
         self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts)
 
     def call(
@@ -143,10 +146,12 @@ class TFFastSpeech2(TFFastSpeech):
         duration_gts,
         f0_gts,
         energy_gts,
+        bounds,
         training=False,
     ):
         """Call logic."""
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
+        embedding_output = tf.concat([embedding_output, bounds], 0)
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=training
         )
@@ -213,6 +218,7 @@ class TFFastSpeech2(TFFastSpeech):
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
+            tf.TensorSpec(shape=[None, None], dtype=tf.float32),
         ],
     )
     def inference(
@@ -223,9 +229,11 @@ class TFFastSpeech2(TFFastSpeech):
         speed_ratios,
         f0_ratios,
         energy_ratios,
+        bounds,
     ):
         """Call logic."""
         embedding_output = self.embeddings([input_ids, speaker_ids], training=False)
+        embedding_output = tf.concat([embedding_output, bounds], 0)
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=False
         )
