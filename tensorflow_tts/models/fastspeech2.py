@@ -219,12 +219,11 @@ class TFFastSpeech2(TFFastSpeech):
         experimental_relax_shapes=True,
         input_signature=[
             tf.TensorSpec(shape=[None, None], dtype=tf.int32),
-            tf.TensorSpec(shape=[None, None], dtype=tf.bool),
             tf.TensorSpec(shape=[None,], dtype=tf.int32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
-            tf.TensorSpec(shape=[None, None], dtype=tf.float32),
+            tf.TensorSpec(shape=[None], dtype=tf.float32),
         ],
     )
     def inference(
@@ -239,7 +238,9 @@ class TFFastSpeech2(TFFastSpeech):
     ):
         """Call logic."""
         embedding_output = self.embeddings([input_ids, speaker_ids], training=False)
-        embedding_output = tf.concat([embedding_output, bounds], 0)
+        bounds = tf.expand_dims(bounds, axis=-1)
+        embedding_output = tf.concat([embedding_output, bounds], -1)
+
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=False
         )
@@ -303,4 +304,3 @@ class TFFastSpeech2(TFFastSpeech):
         )
 
         outputs = (mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs)
-        return outputs
