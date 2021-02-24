@@ -97,7 +97,9 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         f0_files = sorted(find_files(root_dir, f0_query))
         energy_files = sorted(find_files(root_dir, energy_query))
         # filter by threshold
-        if mel_length_threshold==3: #is not None:
+        if mel_length_threshold is not None:
+            for m in mel_files:
+                print(mel_load_fn(m).shape)
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
 
             idxs = [

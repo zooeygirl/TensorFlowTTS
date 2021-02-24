@@ -203,7 +203,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
-            bound=bound,
+            bounds=bound,
             training=False,
         )
         log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
@@ -252,7 +252,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
-            bound=bound,
+            bounds=bound,
             training=False,
         )
         return mel_before, mel_after
