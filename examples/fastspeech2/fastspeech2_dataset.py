@@ -97,7 +97,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         f0_files = sorted(find_files(root_dir, f0_query))
         energy_files = sorted(find_files(root_dir, energy_query))
         # filter by threshold
-        if mel_length_threshold is not None:
+        if mel_length_threshold==3: #is not None:
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
 
             idxs = [
@@ -211,6 +211,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             f0 = self.f0_load_fn(f0_file)
             energy = self.energy_load_fn(energy_file)
             bound = self.boundInputs[i]
+            bound = tf.cast(bound, tf.float32)
 
             duration = tf.concat([duration, [0]],0)
 
@@ -259,7 +260,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         return datasets
 
     def get_output_dtypes(self):
-        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32, tf.float32)
+        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32, np.float32)
         if self.return_utt_id:
             output_types = (tf.dtypes.string, *output_types)
         return output_types

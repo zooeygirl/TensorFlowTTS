@@ -188,7 +188,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
         ],
     )
-    def _eval_step(self, charactor, duration, f0, energy, mel):
+    def _eval_step(self, charactor, duration, f0, energy, mel, bound):
         """Evaluate model one step."""
         (
             mel_before,
