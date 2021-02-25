@@ -215,17 +215,20 @@ class TFFastSpeech2(TFFastSpeech):
         outputs = (mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs)
         return outputs
 
+
     @tf.function(
         experimental_relax_shapes=True,
         input_signature=[
-            tf.TensorSpec(shape=[None, None], dtype=tf.int32),
+            tf.TensorSpec(shape=[None,], dtype=tf.int32),
+            tf.TensorSpec(shape=[None,], dtype=tf.int32),
             tf.TensorSpec(shape=[None,], dtype=tf.int32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
             tf.TensorSpec(shape=[None,], dtype=tf.float32),
-            tf.TensorSpec(shape=[None], dtype=tf.float32),
+            tf.TensorSpec(shape=[None,], dtype=tf.float32),
         ],
     )
+
     def inference(
         self,
         input_ids,
