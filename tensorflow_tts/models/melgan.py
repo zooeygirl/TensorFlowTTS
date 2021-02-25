@@ -15,11 +15,9 @@
 """MelGAN Modules."""
 
 import numpy as np
-
 import tensorflow as tf
 
-from tensorflow_tts.utils import WeightNormalization
-from tensorflow_tts.utils import GroupConv1D
+from tensorflow_tts.utils import GroupConv1D, WeightNormalization
 
 
 def get_initializer(initializer_seed=42):
@@ -37,7 +35,6 @@ class TFReflectionPad1d(tf.keras.layers.Layer):
 
     def __init__(self, padding_size, padding_type="REFLECT", **kwargs):
         """Initialize TFReflectionPad1d module.
-
         Args:
             padding_size (int)
             padding_type (str) ("CONSTANT", "REFLECT", or "SYMMETRIC". Default is "REFLECT")
@@ -265,27 +262,41 @@ class TFMelGANGenerator(tf.keras.Model):
                 kernel_size=config.kernel_size,
                 use_bias=config.use_bias,
                 kernel_initializer=get_initializer(config.initializer_seed),
+                dtype=tf.float32,
             ),
         ]
         if config.use_final_nolinear_activation:
-            layers += [tf.keras.layers.Activation("tanh")]
+            layers += [tf.keras.layers.Activation("tanh", dtype=tf.float32)]
 
         if config.is_weight_norm is True:
             self._apply_weightnorm(layers)
 
         self.melgan = tf.keras.models.Sequential(layers)
 
-    @tf.function(
-        input_signature=[tf.TensorSpec(shape=[None, None, 80], dtype=tf.float32)]
-    )
-    def call(self, c):
+    def call(self, mels, **kwargs):
         """Calculate forward propagation.
         Args:
             c (Tensor): Input tensor (B, T, channels)
         Returns:
             Tensor: Output tensor (B, T ** prod(upsample_scales), out_channels)
         """
-        return self.melgan(c)
+        return self.inference(mels)
+
+    @tf.function(
+        input_signature=[
+            tf.TensorSpec(shape=[None, None, 80], dtype=tf.float32, name="mels")
+        ]
+    )
+    def inference(self, mels):
+        return self.melgan(mels)
+
+    @tf.function(
+        input_signature=[
+            tf.TensorSpec(shape=[1, None, 80], dtype=tf.float32, name="mels")
+        ]
+    )
+    def inference_tflite(self, mels):
+        return self.melgan(mels)
 
     def _apply_weightnorm(self, list_layers):
         """Try apply weightnorm for all layer in list_layers."""
@@ -414,7 +425,7 @@ class TFMelGANDiscriminator(tf.keras.layers.Layer):
 
         self.disciminator = discriminator
 
-    def call(self, x):
+    def call(self, x, **kwargs):
         """Calculate forward propagation.
         Args:
             x (Tensor): Input noise signal (B, T, 1).
@@ -471,7 +482,7 @@ class TFMelGANMultiScaleDiscriminator(tf.keras.Model):
                 **config.downsample_pooling_params
             )
 
-    def call(self, x):
+    def call(self, x, **kwargs):
         """Calculate forward propagation.
         Args:
             x (Tensor): Input noise signal (B, T, 1).
