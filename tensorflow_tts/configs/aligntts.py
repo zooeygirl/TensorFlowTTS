@@ -5,7 +5,7 @@
 
 """FastSpeech Config object."""
 
-from tensorflow_tts.processor.ljspeech import symbols
+#from tensorflow_tts.processor.ljspeech import symbols
 
 
 class AlignTTSConfig(object):
@@ -13,7 +13,7 @@ class AlignTTSConfig(object):
 
     def __init__(
             self,
-            vocab_size=len(symbols),
+            vocab_size=149, #len(symbols),
             f0_energy_quantize_size=256,
             n_speakers=1,
             hidden_size=384,

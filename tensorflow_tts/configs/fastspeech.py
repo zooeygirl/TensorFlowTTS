@@ -14,7 +14,7 @@
 # limitations under the License.
 """FastSpeech Config object."""
 
-from tensorflow_tts.processor.ljspeech import symbols
+#from tensorflow_tts.processor.ljspeech import symbols
 
 
 class FastSpeechConfig(object):
@@ -22,7 +22,7 @@ class FastSpeechConfig(object):
 
     def __init__(
         self,
-        vocab_size=len(symbols),
+        vocab_size=149, #len(symbols),
         n_speakers=1,
         hidden_size=384,
         num_hidden_layers=6,

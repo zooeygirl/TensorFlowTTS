@@ -22,7 +22,7 @@ class Tacotron2Config(object):
 
     def __init__(
         self,
-        vocab_size=len(symbols),
+        vocab_size=149, #len(symbols),
         embedding_hidden_size=512,
         initializer_range=0.02,
         layer_norm_eps=1e-6,
