@@ -31,6 +31,21 @@ from tensorflow_tts.utils import remove_outlier
 with open('/content/drive/MyDrive/LJSpeech/bounds.pickle', 'rb') as handle:
     boundInputs = pickle.load(handle)
 
+def getSpaces(char,dur, mel, bound):
+    spaces = np.where(char == 11)[0]
+    stopLoc = random.choice(spaces)
+    melDur = np.sum(dur[:stopLoc])
+    mel = mel[:melDur, :]
+    char[stopLoc] = 148
+    char[stopLoc+1:] = 0
+    bound[stopLoc+1:] = 0
+    return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), bound.astype(np.float32)]
+
+
+def tf_getSpaces(char, dur, mel, bound):
+    outs = tf.numpy_function(getSpaces, [char,dur, mel, bound], [tf.int32, tf.int32, tf.float32, tf.float32])
+    return outs
+
 
 def average_by_duration(x, durs):
     mel_len = durs.sum()
@@ -75,6 +90,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         energy_load_fn=np.load,
         mel_length_threshold=None,
         return_utt_id=False,
+        incremental=None,
     ):
         """Initialize dataset.
 
@@ -214,6 +230,15 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             bound = tf.cast(bound, tf.float32)
 
             duration = tf.concat([duration, [0]],0)
+
+            if incremental==True:
+
+                outputs = tf_getSpaces(charactor, duration, mel, bound)
+                charactor = outputs[0]
+                duration = outputs[1]
+                mel = outputs[2]
+                bound = outputs[3]
+
 
             f0 = self._norm_mean_std(f0, self.f0_stat[0], self.f0_stat[1])
             energy = self._norm_mean_std(
