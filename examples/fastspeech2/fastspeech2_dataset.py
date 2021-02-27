@@ -90,7 +90,6 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         energy_load_fn=np.load,
         mel_length_threshold=None,
         return_utt_id=False,
-        incremental=None,
     ):
         """Initialize dataset.
 
@@ -216,6 +215,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
 
     def generator(self, utt_ids):
         for i, utt_id in enumerate(utt_ids):
+            incremental==False
             mel_file = self.mel_files[i]
             charactor_file = self.charactor_files[i]
             duration_file = self.duration_files[i]
