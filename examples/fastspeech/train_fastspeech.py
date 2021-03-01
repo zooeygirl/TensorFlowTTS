@@ -405,15 +405,14 @@ def main():
     else:
         mel_length_threshold = None
 
-    if config["format"] == "npy":
-        charactor_query = "*-ids.npy"
-        mel_query = "*-raw-feats.npy" if args.use_norm is False else "*-norm-feats.npy"
-        duration_query = "*-durations.npy"
-        charactor_load_fn = np.load
-        mel_load_fn = np.load
-        duration_load_fn = np.load
-    else:
+    if config["format"] != "npy":
         raise ValueError("Only npy are supported.")
+    charactor_query = "*-ids.npy"
+    mel_query = "*-raw-feats.npy" if not args.use_norm else "*-norm-feats.npy"
+    duration_query = "*-durations.npy"
+    charactor_load_fn = np.load
+    mel_load_fn = np.load
+    duration_load_fn = np.load        
 
     # define train/valid dataset
     train_dataset = CharactorDurationMelDataset(
