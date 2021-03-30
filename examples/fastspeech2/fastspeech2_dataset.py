@@ -31,6 +31,9 @@ from tensorflow_tts.utils import remove_outlier
 with open('/content/drive/MyDrive/LJSpeech/bounds.pickle', 'rb') as handle:
     boundInputs = pickle.load(handle)
 
+with open('/content/drive/MyDrive/LJSpeech/proms.pickle', 'rb') as handle:
+    promInputs = pickle.load(handle)
+
 def getSpaces(char,dur, mel, bound):
     spaces = np.where(char == 11)[0]
     stopLoc = random.choice(spaces)
@@ -202,6 +205,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         self.max_f0_embeddings = max_f0_embeddings
         self.max_energy_embeddings = max_energy_embeddings
         self.boundInputs = [boundInputs[u] for u in utt_ids]
+        self.promInputs = [promInputs[u] for u in utt_ids]
 
     def get_args(self):
         return [self.utt_ids]
@@ -215,7 +219,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
 
     def generator(self, utt_ids):
         for i, utt_id in enumerate(utt_ids):
-            incremental==False
+            incremental=False
             mel_file = self.mel_files[i]
             charactor_file = self.charactor_files[i]
             duration_file = self.duration_files[i]
@@ -228,6 +232,8 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             energy = self.energy_load_fn(energy_file)
             bound = self.boundInputs[i]
             bound = tf.cast(bound, tf.float32)
+            prom = self.promInputs[i]
+            prom = tf.cast(prom, tf.float32)
 
             duration = tf.concat([duration, [0]],0)
 
@@ -250,9 +256,9 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             energy = tf_average_by_duration(energy, duration)
 
             if self.return_utt_id:
-                items = utt_id, charactor, duration, f0, energy, mel, bound
+                items = utt_id, charactor, duration, f0, energy, mel, bound, prom
             else:
-                items = charactor, duration, f0, energy, mel, bound
+                items = charactor, duration, f0, energy, mel, bound, prom
             yield items
 
     def create(
@@ -279,13 +285,13 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             )
 
         datasets = datasets.padded_batch(
-            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None])
+            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None], [None])
         )
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)
         return datasets
 
     def get_output_dtypes(self):
-        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32, np.float32)
+        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32, np.float32, np.float32)
         if self.return_utt_id:
             output_types = (tf.dtypes.string, *output_types)
         return output_types
