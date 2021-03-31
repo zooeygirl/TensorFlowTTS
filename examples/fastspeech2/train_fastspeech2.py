@@ -96,7 +96,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
         ],
     )
-    def _one_step_fastspeech2(self, charactor, duration, f0, energy, mel, bound):
+    def _one_step_fastspeech2(self, charactor, duration, f0, energy, mel, bound, prom):
         with tf.GradientTape() as tape:
             (
                 mel_before,
