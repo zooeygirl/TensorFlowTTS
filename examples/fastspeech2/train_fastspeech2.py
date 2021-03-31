@@ -155,7 +155,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tqdm(self.eval_data_loader, desc="[eval]"), 1
         ):
             # eval one step
-            charactor, duration, f0, energy, mel, bound = batch
+            charactor, duration, f0, energy, mel, bound, prom = batch
             self._eval_step(charactor, duration, f0, energy, mel, bound, prom)
 
             if eval_steps_per_epoch <= self.config["num_save_intermediate_results"]:
