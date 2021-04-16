@@ -133,7 +133,7 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         energy_gts = tf.convert_to_tensor(
             [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
         )
-        emb = tf.convert_to_tensor(
+        embs = tf.convert_to_tensor(
             [[10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768,[10]*768,[10]*768], tf.float32
         )
 

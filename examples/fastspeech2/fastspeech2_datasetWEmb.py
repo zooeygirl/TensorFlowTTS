@@ -37,7 +37,7 @@ with open('/content/drive/MyDrive/LJSpeech/proms.pickle', 'rb') as handle:
 with open('/content/drive/MyDrive/LJSpeech/WEmb.pickle', 'rb') as handle:
     embInputs = pickle.load(handle)
 
-def getSpaces(char,dur, mel, wEmb):
+def getSpaces(char,dur, mel, emb):
     spaces = np.where(char == 11)[0]
     stopLoc = random.choice(spaces)
     melDur = np.sum(dur[:stopLoc])
@@ -45,11 +45,11 @@ def getSpaces(char,dur, mel, wEmb):
     char[stopLoc] = 148
     char[stopLoc+1:] = 0
     wEmb[stopLoc:,:] = 0
-    return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), wEmb.astype(np.float32)]
+    return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
 
 
-def tf_getSpaces(char, dur, mel, wEmb):
-    outs = tf.numpy_function(getSpaces, [char,dur, mel, wEmb], [tf.int32, tf.int32, tf.float32, tf.float32])
+def tf_getSpaces(char, dur, mel, emb):
+    outs = tf.numpy_function(getSpaces, [char,dur, mel, emb], [tf.int32, tf.int32, tf.float32, tf.float32])
     return outs
 
 
@@ -291,7 +291,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             )
 
         datasets = datasets.padded_batch(
-            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None, None])
+            batch_size, padded_shapes=([None], [None], [None], [None], [None], [None, None], [None, None])
         )
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)
         return datasets

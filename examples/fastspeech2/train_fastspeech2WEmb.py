@@ -22,7 +22,7 @@ from tensorflow_tts.optimizers import AdamWeightDecay
 from tensorflow_tts.optimizers import WarmUp
 from tensorflow_tts.models import TFFastSpeech2, TFFastSpeech2WEmb
 from tensorflow_tts.configs import FastSpeech2Config
-from fastspeech2.fastspeech2_dataset import CharactorDurationF0EnergyMelDataset
+from fastspeech2.fastspeech2_datasetWEmb import CharactorDurationF0EnergyMelDataset
 from fastspeech.train_fastspeech import FastSpeechTrainer
 from tqdm import tqdm
 import tensorflow_tts
@@ -110,7 +110,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 duration_gts=duration,
                 f0_gts=f0,
                 energy_gts=energy,
-                emb=emb,
+                embs=emb,
                 training=True,
             )
             log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
@@ -203,7 +203,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
-            emb=emb,
+            embs=emb,
             training=False,
         )
         log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
