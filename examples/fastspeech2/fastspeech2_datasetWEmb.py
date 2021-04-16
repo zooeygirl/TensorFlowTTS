@@ -240,6 +240,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             #prom = tf.cast(prom, tf.float32)
             emb = self.embInputs[i]
             emb = tf.cast(emb, tf.float32)
+            emb = tf.concat([emb, tf.zeros([1, 768])], 0)
 
             duration = tf.concat([duration, [0]],0)
 

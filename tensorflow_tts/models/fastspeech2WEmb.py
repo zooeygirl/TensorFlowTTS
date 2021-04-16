@@ -102,6 +102,8 @@ class TFFastSpeech2WEmb(TFFastSpeech):
             config, name="duration_predictor"
         )
 
+        self.getCorrectSize = tf.keras.layers.Dense(384, activation='relu')
+
         # define f0_embeddings and energy_embeddings
         self.f0_embeddings = tf.keras.layers.Conv1D(
             filters=config.hidden_size,
@@ -134,7 +136,7 @@ class TFFastSpeech2WEmb(TFFastSpeech):
             [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
         )
         embs = tf.convert_to_tensor(
-            [[10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768,[10]*768,[10]*768], tf.float32
+            [[[10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768,[10]*768,[10]*768]*1], tf.float32
         )
 
         self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts, embs)
@@ -153,9 +155,10 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         """Call logic."""
 
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
-        embs = tf.expand_dims(embs, axis=-1)
-        print(embs.shape)
+        #embs = tf.expand_dims(embs, axis=-1)
+        #print(embs.shape)
         embedding_output = tf.concat([embedding_output, embs], -1)
+        embedding_output = self.getCorrectSize(embedding_output)
 
 
 
@@ -232,8 +235,9 @@ class TFFastSpeech2WEmb(TFFastSpeech):
     ):
         """Call logic."""
         embedding_output = self.embeddings([input_ids, speaker_ids], training=False)
-        embs = tf.expand_dims(embs, axis=-1)
+        #embs = tf.expand_dims(embs, axis=-1)
         embedding_output = tf.concat([embedding_output, embs], -1)
+        embedding_output = self.getCorrectSize(embedding_output)
 
 
         encoder_output = self.encoder(
