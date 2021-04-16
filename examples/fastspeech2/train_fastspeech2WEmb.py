@@ -252,7 +252,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_gts=duration,
             f0_gts=f0,
             energy_gts=energy,
-            emb=emb,
+            embs=emb,
             training=False,
         )
         return mel_before, mel_after

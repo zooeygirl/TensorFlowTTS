@@ -292,13 +292,13 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             )
 
         datasets = datasets.padded_batch(
-            batch_size, padded_shapes=([None], [None], [None], [None], [None], [None, None], [None, None])
+            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None, None])
         )
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)
         return datasets
 
     def get_output_dtypes(self):
-        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32, np.float32, np.float32)
+        output_types = (tf.int32, tf.int32, tf.float32, tf.float32, tf.float32, np.float32)
         if self.return_utt_id:
             output_types = (tf.dtypes.string, *output_types)
         return output_types
