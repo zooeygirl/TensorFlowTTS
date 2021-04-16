@@ -28,11 +28,11 @@ from tensorflow_tts.datasets.abstract_dataset import AbstractDataset
 from tensorflow_tts.utils import find_files
 from tensorflow_tts.utils import remove_outlier
 
-with open('/content/drive/MyDrive/LJSpeech/bounds.pickle', 'rb') as handle:
-    boundInputs = pickle.load(handle)
+#with open('/content/drive/MyDrive/LJSpeech/bounds.pickle', 'rb') as handle:
+    #boundInputs = pickle.load(handle)
 
-with open('/content/drive/MyDrive/LJSpeech/proms.pickle', 'rb') as handle:
-    promInputs = pickle.load(handle)
+#with open('/content/drive/MyDrive/LJSpeech/proms.pickle', 'rb') as handle:
+    #promInputs = pickle.load(handle)
 
 with open('/content/drive/MyDrive/LJSpeech/WEmb.pickle', 'rb') as handle:
     embInputs = pickle.load(handle)
@@ -287,13 +287,15 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
 
         if is_shuffle:
             datasets = datasets.shuffle(
-                self.get_len_dataset(),
+                #self.get_len_dataset(),
+                1000,
                 reshuffle_each_iteration=reshuffle_each_iteration,
             )
 
         datasets = datasets.padded_batch(
             batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None, None])
         )
+
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)
         return datasets
 
