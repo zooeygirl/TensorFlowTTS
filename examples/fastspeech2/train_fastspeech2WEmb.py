@@ -17,6 +17,8 @@
 import sys
 sys.path.append(".")
 sys.path.append("/content/TensorFlowTTS/examples/")
+sys.path.append("/nethome/stephenb/Documents/TensorFlowTTS/examples/")
+
 
 from tensorflow_tts.optimizers import AdamWeightDecay
 from tensorflow_tts.optimizers import WarmUp
