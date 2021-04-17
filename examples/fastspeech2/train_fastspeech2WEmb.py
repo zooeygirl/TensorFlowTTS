@@ -469,6 +469,7 @@ def main():
         allow_cache=config["allow_cache"],
         batch_size=config["batch_size"],
     )
+    #print(list(valid_dataset)[0])
 
     fastspeech = TFFastSpeech2WEmb(config=FastSpeech2Config(**config["fastspeech_params"]))
     fastspeech._build()
