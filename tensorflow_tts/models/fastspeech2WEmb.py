@@ -102,7 +102,7 @@ class TFFastSpeech2WEmb(TFFastSpeech):
             config, name="duration_predictor"
         )
 
-        self.getCorrectSize = tf.keras.layers.Dense(384, activation='relu')
+        self.getCorrectSize = tf.keras.layers.Dense(384, activation='relu', name='correctSize')
 
         # define f0_embeddings and energy_embeddings
         self.f0_embeddings = tf.keras.layers.Conv1D(
@@ -157,9 +157,13 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
         #embs = tf.expand_dims(embs, axis=-1)
         #print(embs.shape)
-        embedding_output = tf.concat([embedding_output, embs], -1)
-        embedding_output = self.getCorrectSize(embedding_output)
 
+        #first attempt
+        #embedding_output = tf.concat([embedding_output, embs], -1)
+        #embedding_output = self.getCorrectSize(embedding_output)
+
+        embs = self.getCorrectSize(embs)
+        embedding_output = tf.math.add(embedding_output, embs)
 
 
         encoder_output = self.encoder(

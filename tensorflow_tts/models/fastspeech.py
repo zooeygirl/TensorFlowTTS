@@ -70,13 +70,13 @@ class TFFastSpeechEmbeddings(tf.keras.layers.Layer):
         """Init variables."""
         super().__init__(**kwargs)
         self.vocab_size = config.vocab_size
-        self.hidden_size = config.hidden_size-2
+        self.hidden_size = config.hidden_size#-2
         self.initializer_range = config.initializer_range
         self.config = config
 
         self.position_embeddings = tf.keras.layers.Embedding(
             config.max_position_embeddings + 1,
-            config.hidden_size-2,
+            config.hidden_size,#-2,
             weights=[self._sincos_embedding()],
             name="position_embeddings",
             trainable=False,
