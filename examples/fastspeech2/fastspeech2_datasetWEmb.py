@@ -39,14 +39,21 @@ with open('/nethome/stephenb/Documents/WEmb.pickle', 'rb') as handle:
     embInputs = pickle.load(handle)
 
 def getSpaces(char,dur, mel, emb):
-    spaces = np.where(char == 11)[0]
-    stopLoc = random.choice(spaces)
-    melDur = np.sum(dur[:stopLoc])
-    mel = mel[:melDur, :]
-    char[stopLoc] = 148
-    char[stopLoc+1:] = 0
-    wEmb[stopLoc:,:] = 0
-    return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
+    if random.choice([1,2,3,4,5,6,7,8,9,10]) < 4:
+      return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
+    else:
+      spaces = np.where(char == 11)[0]
+      if len(spaces)>0:
+        stopLoc = random.choice(spaces)
+        melDur = np.sum(dur[:stopLoc])
+        mel = mel[:melDur, :]
+        char[stopLoc] = 149
+        char[stopLoc+1:] = 0
+        emb[stopLoc:,:] = 0
+        dur[stopLoc:] = 0
+        return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
+      else:
+        return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
 
 
 def tf_getSpaces(char, dur, mel, emb):
