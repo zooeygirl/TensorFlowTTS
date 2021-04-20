@@ -236,6 +236,7 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         f0_ratios,
         energy_ratios,
         embs,
+        withChar=True,
     ):
         """Call logic."""
         embedding_output = self.embeddings([input_ids, speaker_ids], training=False)
@@ -243,8 +244,12 @@ class TFFastSpeech2WEmb(TFFastSpeech):
 
         #embedding_output = tf.concat([embedding_output, embs], -1)
         #embedding_output = self.getCorrectSize(embedding_output)
-        embs = self.getCorrectSize(embs)
-        embedding_output = tf.math.add(embedding_output, embs)
+        if withChar==False:
+          embs = self.getCorrectSize(embs)
+          embedding_output = tf.expand_dims(embs, axis=0)
+        else:
+          embs = self.getCorrectSize(embs)
+          embedding_output = tf.math.add(embedding_output, embs)
 
 
         encoder_output = self.encoder(
