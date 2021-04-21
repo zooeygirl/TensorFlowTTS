@@ -137,7 +137,7 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         )
         embs = tf.convert_to_tensor(
             #[[[10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768,[10]*768,[10]*768]*1], tf.float32
-            [[1]*768], tf.float32
+            [[[1]*768]], tf.float32
         )
 
         self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts, embs)
@@ -158,14 +158,6 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         justEnd=True
 
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
-
-        if justEnd == True:
-            embs = tf.expand_dims(embs, axis=-1) #for just End
-        #print(embs.shape)
-
-        #first attempt
-        #embedding_output = tf.concat([embedding_output, embs], -1)
-        #embedding_output = self.getCorrectSize(embedding_output)
 
 
         embs = self.getCorrectSize(embs)
@@ -251,8 +243,19 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         embedding_output = self.embeddings([input_ids, speaker_ids], training=False)
         #embs = tf.expand_dims(embs, axis=-1)
 
-        #embedding_output = tf.concat([embedding_output, embs], -1)
-        #embedding_output = self.getCorrectSize(embedding_output)
+
+        justEnd=True
+
+        embs = self.getCorrectSize(embs)
+        if withChar==False:
+          embedding_output = tf.expand_dims(embs, axis=0)
+        elif justEnd==True:
+          embedding_output = tf.concat([embedding_output[:, :-1, :], embs], 1)
+        else:
+          embedding_output = tf.math.add(embedding_output, embs)
+
+
+
         if withChar==False:
           embs = self.getCorrectSize(embs)
           embedding_output = tf.expand_dims(embs, axis=0)

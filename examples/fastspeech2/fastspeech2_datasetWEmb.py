@@ -93,8 +93,8 @@ def getSpaces(char,dur, mel, emb):
             dur[stopLoc:] = 0
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
       else:
+        emb = emb[-1,:]
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
-
 
 def tf_getSpaces(char, dur, mel, emb):
     outs = tf.numpy_function(getSpaces, [char,dur, mel, emb], [tf.int32, tf.int32, tf.float32, tf.float32])
