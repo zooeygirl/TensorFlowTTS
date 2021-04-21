@@ -137,7 +137,7 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         )
         embs = tf.convert_to_tensor(
             #[[[10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768,[10]*768,[10]*768]*1], tf.float32
-            [[1]*768]*1], tf.float32
+            [[1]*768], tf.float32
         )
 
         self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts, embs)
@@ -155,16 +155,24 @@ class TFFastSpeech2WEmb(TFFastSpeech):
     ):
         """Call logic."""
 
+        justEnd=True
+
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
-        #embs = tf.expand_dims(embs, axis=-1)
+
+        if justEnd == True:
+            embs = tf.expand_dims(embs, axis=-1) #for just End
         #print(embs.shape)
 
         #first attempt
         #embedding_output = tf.concat([embedding_output, embs], -1)
         #embedding_output = self.getCorrectSize(embedding_output)
 
+
         embs = self.getCorrectSize(embs)
-        embedding_output = tf.math.add(embedding_output, embs)
+        if justEnd == True:
+            embedding_output = tf.concat([embedding_output[:, :-1, :], embs], 1)
+        else:
+            embedding_output = tf.math.add(embedding_output, embs)
 
 
         encoder_output = self.encoder(

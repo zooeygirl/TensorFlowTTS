@@ -34,12 +34,13 @@ from tensorflow_tts.utils import remove_outlier
 #with open('/content/drive/MyDrive/LJSpeech/proms.pickle', 'rb') as handle:
     #promInputs = pickle.load(handle)
 
-#with open('/content/drive/MyDrive/LJSpeech/WEmb.pickle', 'rb') as handle:
-with open('/nethome/stephenb/Documents/WEmb.pickle', 'rb') as handle:
+with open('/content/drive/MyDrive/LJSpeech/WEmb.pickle', 'rb') as handle:
+#with open('/nethome/stephenb/Documents/WEmb.pickle', 'rb') as handle:
     embInputs = pickle.load(handle)
 
+"""
 def getSpaces(char,dur, mel, emb):
-    if random.choice([1,2,3,4,5,6,7,8,9,10]) < 4:
+    if random.choice([1,2,3,4,5,6,7,8,9,10]) < 3:
       return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
     else:
       spaces = np.where(char == 11)[0]
@@ -59,6 +60,36 @@ def getSpaces(char,dur, mel, emb):
             char[stopLoc] = 149
             char[stopLoc+1:] = 0
             emb[stopLoc:,:] = 0
+            dur[stopLoc:] = 0
+        return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
+      else:
+        return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
+"""
+
+def getSpaces(char,dur, mel, emb):
+    if random.choice([1,2,3,4,5,6,7,8,9,10]) < 3:
+        emb = emb[-1,:]
+        return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
+    else:
+      spaces = np.where(char == 11)[0]
+      if len(spaces)>0:
+        if random.choice([1,2,3,4,5,6,7,8,9,10]) < 4:
+            stopLoc = spaces[0]
+            melDur = np.sum(dur[:stopLoc])
+            mel = mel[:melDur, :]
+            char[stopLoc] = 149
+            char[stopLoc+1:] = 0
+            #emb[stopLoc:,:] = 0
+            emb = emb[stopLoc-1,:]
+            dur[stopLoc:] = 0
+        else:
+            stopLoc = random.choice(spaces)
+            melDur = np.sum(dur[:stopLoc])
+            mel = mel[:melDur, :]
+            char[stopLoc] = 149
+            char[stopLoc+1:] = 0
+            #emb[stopLoc:,:] = 0
+            emb = emb[stopLoc-1,:]
             dur[stopLoc:] = 0
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
       else:
@@ -309,7 +340,8 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             )
 
         datasets = datasets.padded_batch(
-            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None, None])
+            #batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None, None])
+            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None])
         )
 
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)

@@ -94,7 +94,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None, 80], dtype=tf.float32),
-            tf.TensorSpec([None, None, 768], dtype=tf.float32),
+            #tf.TensorSpec([None, None, 768], dtype=tf.float32),
+            tf.TensorSpec([None, 768], dtype=tf.float32),
         ],
     )
     def _one_step_fastspeech2(self, charactor, duration, f0, energy, mel, emb):
@@ -187,7 +188,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None, 80], dtype=tf.float32),
-            tf.TensorSpec([None, None, 768], dtype=tf.float32),
+            #tf.TensorSpec([None, None, 768], dtype=tf.float32),
+            tf.TensorSpec([None, 768], dtype=tf.float32),
         ],
     )
     def _eval_step(self, charactor, duration, f0, energy, mel, emb):
@@ -242,7 +244,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None], dtype=tf.float32),
             tf.TensorSpec([None, None, 80], dtype=tf.float32),
-            tf.TensorSpec([None, None, 768], dtype=tf.float32),
+            #tf.TensorSpec([None, None, 768], dtype=tf.float32),
+            tf.TensorSpec([None, 768], dtype=tf.float32),
         ],
     )
     def predict(self, charactor, duration, f0, energy, mel, emb):
