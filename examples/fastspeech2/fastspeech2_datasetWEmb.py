@@ -299,8 +299,10 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
                 duration = outputs[1]
                 mel = outputs[2]
                 emb = outputs[3]
-                print(charactor)
-                print(emb.shape)
+                #just end
+                emb = tf.expand_dims(emb,0)
+                paddings = tf.constant([[charactor.shape[0]-1, 0], [0, 0]])
+                emb = tf.pad(emb, paddings, "CONSTANT")
 
 
             f0 = self._norm_mean_std(f0, self.f0_stat[0], self.f0_stat[1])
@@ -342,8 +344,8 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
             )
 
         datasets = datasets.padded_batch(
-            #batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None, None])
-            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None])
+            batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None, None])
+            #batch_size, padded_shapes=([None], [None], [None], [None], [None, None], [None])
         )
 
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)
