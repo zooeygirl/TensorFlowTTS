@@ -256,13 +256,6 @@ class TFFastSpeech2WEmb(TFFastSpeech):
 
 
 
-        if withChar==False:
-          embs = self.getCorrectSize(embs)
-          embedding_output = tf.expand_dims(embs, axis=0)
-        else:
-          embs = self.getCorrectSize(embs)
-          embedding_output = tf.math.add(embedding_output, embs)
-
 
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=False

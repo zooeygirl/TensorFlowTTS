@@ -93,7 +93,7 @@ def getSpaces(char,dur, mel, emb):
             dur[stopLoc:] = 0
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
       else:
-        emb = emb[-1,:]
+        #emb = emb[-1,:]
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
 
 def tf_getSpaces(char, dur, mel, emb):
@@ -299,6 +299,8 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
                 duration = outputs[1]
                 mel = outputs[2]
                 emb = outputs[3]
+                print(charactor)
+                print(emb.shape)
 
 
             f0 = self._norm_mean_std(f0, self.f0_stat[0], self.f0_stat[1])
