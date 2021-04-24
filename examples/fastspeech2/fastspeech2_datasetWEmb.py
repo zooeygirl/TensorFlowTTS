@@ -38,7 +38,7 @@ with open('/content/drive/MyDrive/LJSpeech/WEmb.pickle', 'rb') as handle:
 #with open('/nethome/stephenb/Documents/WEmb.pickle', 'rb') as handle:
     embInputs = pickle.load(handle)
 
-"""
+
 def getSpaces(char,dur, mel, emb):
     if random.choice([1,2,3,4,5,6,7,8,9,10]) < 3:
       return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
@@ -64,8 +64,9 @@ def getSpaces(char,dur, mel, emb):
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
       else:
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
-"""
 
+
+"""
 def getSpaces(char,dur, mel, emb):
     if random.choice([1,2,3,4,5,6,7,8,9,10]) < 3:
         emb = emb[-1,:]
@@ -95,6 +96,7 @@ def getSpaces(char,dur, mel, emb):
       else:
         #emb = emb[-1,:]
         return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), emb.astype(np.float32)]
+"""
 
 def tf_getSpaces(char, dur, mel, emb):
     outs = tf.numpy_function(getSpaces, [char,dur, mel, emb], [tf.int32, tf.int32, tf.float32, tf.float32])
