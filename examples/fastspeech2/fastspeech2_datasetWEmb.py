@@ -302,9 +302,9 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
                 mel = outputs[2]
                 emb = outputs[3]
                 #just end
-                emb = tf.expand_dims(emb,0)
-                paddings = tf.constant([[charactor.shape[0]-1, 0], [0, 0]])
-                emb = tf.pad(emb, paddings, "CONSTANT")
+                #emb = tf.expand_dims(emb,0)
+                #paddings = tf.constant([[charactor.shape[0]-1, 0], [0, 0]])
+                #emb = tf.pad(emb, paddings, "CONSTANT")
 
 
             f0 = self._norm_mean_std(f0, self.f0_stat[0], self.f0_stat[1])
