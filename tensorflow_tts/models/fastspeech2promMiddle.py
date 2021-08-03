@@ -88,7 +88,7 @@ class TFFastSpeechVariantPredictor(tf.keras.layers.Layer):
         return outputs
 
 
-class TFFastSpeech2WEmb(TFFastSpeech):
+class TFFastSpeech2promMiddle(TFFastSpeech):
     """TF Fastspeech module."""
 
     def __init__(self, config, **kwargs):
@@ -101,8 +101,6 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         self.duration_predictor = TFFastSpeechVariantPredictor(
             config, name="duration_predictor"
         )
-
-        self.getCorrectSize = tf.keras.layers.Dense(384, activation='relu', name='correctSize')
 
         # define f0_embeddings and energy_embeddings
         self.f0_embeddings = tf.keras.layers.Conv1D(
@@ -135,12 +133,13 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         energy_gts = tf.convert_to_tensor(
             [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
         )
-        embs = tf.convert_to_tensor(
-            [[[10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768, [10]*768,[10]*768,[10]*768]*1], tf.float32
-            #[[1]*768], tf.float32
+        bounds = tf.convert_to_tensor(
+            [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
         )
-
-        self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts, embs)
+        proms = tf.convert_to_tensor(
+            [[10, 10, 10, 10, 10, 10, 10, 10, 10, 10]], tf.float32
+        )
+        self(input_ids, attention_mask, speaker_ids, duration_gts, f0_gts, energy_gts, bounds, proms)
 
     def call(
         self,
@@ -150,23 +149,17 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         duration_gts,
         f0_gts,
         energy_gts,
-        embs,
+        bounds,
+        proms,
         training=False,
     ):
         """Call logic."""
 
-
-
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
-
-
-        embs = self.getCorrectSize(embs)
-
-        #embs = tf.expand_dims(embs,1)
-        #paddings = tf.constant([[0, 0], [embedding_output.shape[1]-1, 0], [0, 0]])
-        #embs = tf.pad(embs, paddings, "CONSTANT")
-        embedding_output = tf.math.add(embedding_output, embs)
-
+        bounds = tf.expand_dims(bounds, axis=-1)
+        proms = tf.expand_dims(proms, axis=-1)
+        #embedding_output = tf.concat([embedding_output, bounds], -1)
+        #embedding_output = tf.concat([embedding_output, proms], -1)
 
 
         encoder_output = self.encoder(
@@ -174,6 +167,8 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         )
 
         last_encoder_hidden_states = encoder_output[0]
+        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, bounds], -1)
+        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, proms], -1)
 
 
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
@@ -238,27 +233,22 @@ class TFFastSpeech2WEmb(TFFastSpeech):
         speed_ratios,
         f0_ratios,
         energy_ratios,
-        embs,
-        withChar=True,
+        bounds,
+        proms,
     ):
         """Call logic."""
         embedding_output = self.embeddings([input_ids, speaker_ids], training=False)
-        #embs = tf.expand_dims(embs, axis=-1)
-
-
-        embs = self.getCorrectSize(embs)
-        if withChar==False:
-          embedding_output = tf.expand_dims(embs, axis=0)
-        else:
-          embedding_output = tf.math.add(embedding_output, embs)
-
-
-
+        bounds = tf.expand_dims(bounds, axis=-1)
+        proms = tf.expand_dims(proms, axis=-1)
+        #embedding_output = tf.concat([embedding_output, bounds], -1)
+        #embedding_output = tf.concat([embedding_output, proms], -1)
 
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=False
         )
         last_encoder_hidden_states = encoder_output[0]
+        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, bounds], -1)
+        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, proms], -1)
 
         # expand ratios
         speed_ratios = tf.expand_dims(speed_ratios, 1)  # [B, 1]

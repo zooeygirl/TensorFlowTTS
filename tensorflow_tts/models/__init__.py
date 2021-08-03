@@ -6,6 +6,7 @@ from tensorflow_tts.models.fastspeech import TFFastSpeech
 
 from tensorflow_tts.models.fastspeech2 import TFFastSpeech2
 from tensorflow_tts.models.fastspeech2WEmb import TFFastSpeech2WEmb
+from tensorflow_tts.models.fastspeech2promMiddle import TFFastSpeech2promMiddle
 
 from tensorflow_tts.models.tacotron2 import TFTacotron2
 
