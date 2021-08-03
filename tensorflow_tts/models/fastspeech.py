@@ -162,9 +162,11 @@ class TFFastSpeechEmbeddings(tf.keras.layers.Layer):
 class TFFastSpeechSelfAttention(tf.keras.layers.Layer):
     """Self attention module for fastspeech."""
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, encOrDec, **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
+        if encOrDec == 'dec':
+          config.hidden_size = config.decoder_hidden_size
         if config.hidden_size % config.num_attention_heads != 0:
             raise ValueError(
                 "The hidden size (%d) is not a multiple of the number of attention "
@@ -269,10 +271,10 @@ class TFFastSpeechSelfOutput(tf.keras.layers.Layer):
 class TFFastSpeechAttention(tf.keras.layers.Layer):
     """Fastspeech attention module."""
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, encOrDec, **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
-        self.self_attention = TFFastSpeechSelfAttention(config, name="self")
+        self.self_attention = TFFastSpeechSelfAttention(config, encOrDec, name="self")
         self.dense_output = TFFastSpeechSelfOutput(config, name="output")
 
     def call(self, inputs, training=False):
@@ -355,10 +357,10 @@ class TFFastSpeechOutput(tf.keras.layers.Layer):
 class TFFastSpeechLayer(tf.keras.layers.Layer):
     """Fastspeech module (FFT module on the paper)."""
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, encOrDec, **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
-        self.attention = TFFastSpeechAttention(config, name="attention")
+        self.attention = TFFastSpeechAttention(config, encOrDec, name="attention")
         self.intermediate = TFFastSpeechIntermediate(config, name="intermediate")
         self.bert_output = TFFastSpeechOutput(config, name="output")
 
@@ -388,13 +390,14 @@ class TFFastSpeechLayer(tf.keras.layers.Layer):
 class TFFastSpeechEncoder(tf.keras.layers.Layer):
     """Fast Speech encoder module."""
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, encOrDec='enc', **kwargs):
         """Init variables."""
         super().__init__(**kwargs)
+        self.encOrDec = encOrDec
         self.output_attentions = config.output_attentions
         self.output_hidden_states = config.output_hidden_states
         self.layer = [
-            TFFastSpeechLayer(config, name="layer_._{}".format(i))
+            TFFastSpeechLayer(config, self.encOrDec, name="layer_._{}".format(i))
             for i in range(config.num_hidden_layers)
         ]
 
@@ -432,13 +435,15 @@ class TFFastSpeechDecoder(TFFastSpeechEncoder):
     """Fast Speech decoder module."""
 
     def __init__(self, config, **kwargs):
-        super().__init__(config, **kwargs)
+        super().__init__(config, encOrDec='dec', **kwargs)
         self.config = config
+        self.config.hidden_size = config.decoder_hidden_size
 
         # create decoder positional embedding
         self.decoder_positional_embeddings = tf.keras.layers.Embedding(
             config.max_position_embeddings + 1,
-            config.hidden_size,
+            #config.hidden_size,
+            config.decoder_hidden_size,
             weights=[self._sincos_embedding()],
             name="position_embeddings",
             trainable=False,
