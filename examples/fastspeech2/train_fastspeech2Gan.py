@@ -22,6 +22,7 @@ from tensorflow_tts.optimizers import AdamWeightDecay
 from tensorflow_tts.optimizers import WarmUp
 from tensorflow_tts.models import TFFastSpeech2
 from tensorflow_tts.configs import FastSpeech2Config
+from tensorflow_tts.losses import GANCritic, GanLoss
 from fastspeech2.fastspeech2_dataset import CharactorDurationF0EnergyMelDataset
 from fastspeech.train_fastspeech import FastSpeechTrainer
 from tqdm import tqdm
@@ -32,6 +33,8 @@ import numpy as np
 import argparse
 import logging
 import os
+
+import torch.optim as optim
 
 
 class FastSpeech2Trainer(FastSpeechTrainer):
@@ -69,6 +72,13 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         self.reset_states_eval()
 
         self.config = config
+
+        self.enc = GANCritic().to('gpu').double().train()
+        self.opt_enc = optim.Adam(enc.parameters(), lr=1e-3, betas=(0.0, 0.9))
+
+
+
+#enc.train()
 
     def compile(self, model, optimizer):
         super().compile(model, optimizer)
@@ -122,7 +132,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             energy_loss = self.mse(energy, energy_outputs)
             mel_loss_before = self.mae(mel, mel_before)
             mel_loss_after = self.mae(mel, mel_after)
-            gan_loss = self.ganloss(mel, mel_after)
+            gan_loss = GanLoss(self.GANCritic, self.opt_enc, mel, mel_after , config["batch_size"])
             loss = (
                 duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after + gan_loss
             )
