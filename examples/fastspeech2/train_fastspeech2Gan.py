@@ -73,8 +73,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
 
         self.config = config
 
-        self.enc = GANCritic().to('gpu').double().train()
-        self.opt_enc = optim.Adam(enc.parameters(), lr=1e-3, betas=(0.0, 0.9))
+        self.enc = GANCritic().to('cuda').double().train()
+        self.opt_enc = optim.Adam(self.enc.parameters(), lr=1e-3, betas=(0.0, 0.9))
 
 
 
@@ -132,7 +132,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             energy_loss = self.mse(energy, energy_outputs)
             mel_loss_before = self.mae(mel, mel_before)
             mel_loss_after = self.mae(mel, mel_after)
-            gan_loss = GanLoss(self.GANCritic, self.opt_enc, mel, mel_after , config["batch_size"])
+            gan_loss = GanLoss(self.enc, self.opt_enc, mel, mel_after , 16)
             loss = (
                 duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after + gan_loss
             )

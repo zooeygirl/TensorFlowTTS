@@ -23,14 +23,14 @@ speech2text = Speech2Text(
 
 class GANCritic(nn.Module):
     def __init__(self):
-        super(Encoder, self).__init__()
+        super(GANCritic, self).__init__()
         self.frontend = speech2text.asr_model.frontend
         self.embed = speech2text.asr_model.encoder.embed
         self.encoder = speech2text.asr_model.encoder.encoders[:3]
         self.lstm1 = nn.LSTM(512, 100, 1, bidirectional=False, batch_first=True)
         self.lstm2 = nn.LSTM(100, 20, 1, bidirectional=False, batch_first=True)
         self.linear = nn.Linear(20, 1)
-        m = torch.nn.utils.parametrizations.spectral_norm(enc.linear)
+        m = torch.nn.utils.parametrizations.spectral_norm(self.linear)
         #self.sn = torch.nn.utils.parametrizations.spectral_norm(self.lstm2)
 
     def forward(self, audio, ilen, audioType):
@@ -46,12 +46,15 @@ class GANCritic(nn.Module):
       z = nn.ReLU()(z)
       return z
 
-def GanLoss(GANCritic, opt_enc, real, fake, batch_size):
+def GanLoss(enc, opt_enc, real, fake, batch_size):
+
+    real = torch.tensor(real.numpy())
+    fake = torch.tensor(fake.numpy())
 
     encReal = enc(real.double(), torch.tensor([real.shape[1]]*batch_size).double(), audioType='spec')
     encFake = enc(fake.double(), torch.tensor([fake.shape[1]]*batch_size).double(), audioType='spec')
 
-    GANCritic.zero_grad()
+    enc.zero_grad()
     output = -(torch.mean(encReal) - torch.mean(encFake))
     output.backward()
     opt_enc.step()
