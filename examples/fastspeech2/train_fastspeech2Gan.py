@@ -84,7 +84,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         super().compile(model, optimizer)
         self.mse = tf.keras.losses.MeanSquaredError()
         self.mae = tf.keras.losses.MeanAbsoluteError()
-        self.gan_loss = GanLoss()
+
 
     def _train_step(self, batch):
         """Train model one step."""
@@ -133,6 +133,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             energy_loss = self.mse(energy, energy_outputs)
             mel_loss_before = self.mae(mel, mel_before)
             mel_loss_after = self.mae(mel, mel_after)
+            tf.config.run_functions_eagerly(True)
             gan_loss = self.gan_loss(self.enc, self.opt_enc, mel, mel_after , 16)
             loss = (
                 duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after + gan_loss
