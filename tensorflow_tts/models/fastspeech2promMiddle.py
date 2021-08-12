@@ -19,7 +19,7 @@ import numpy as np
 
 from tensorflow.python.ops import math_ops
 
-from tensorflow_tts.models.fastspeech import TFFastSpeech
+from tensorflow_tts.models.fastspeech import TFFastSpeech, TFFastSpeechLayer
 from tensorflow_tts.models.fastspeech import get_initializer
 
 
@@ -101,6 +101,7 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         self.duration_predictor = TFFastSpeechVariantPredictor(
             config, name="duration_predictor"
         )
+        #self.denseBeforeDur = tf.keras.layers.Dense(386)
 
         # define f0_embeddings and energy_embeddings
         self.f0_embeddings = tf.keras.layers.Conv1D(
@@ -155,21 +156,27 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
     ):
         """Call logic."""
 
+
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
         bounds = tf.expand_dims(bounds, axis=-1)
         proms = tf.expand_dims(proms, axis=-1)
         #embedding_output = tf.concat([embedding_output, bounds], -1)
         #embedding_output = tf.concat([embedding_output, proms], -1)
 
+        profeats = tf.concat([bounds, proms], -1)
 
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=training
         )
+        proencoder_output = self.proencoder(
+            [profeats, attention_mask], training=training
+        )
 
-        last_encoder_hidden_states = encoder_output[0]
-        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, bounds], -1)
-        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, proms], -1)
-
+        #last_encoder_hidden_states = encoder_output[0]
+        last_encoder_hidden_states = tf.concat([encoder_output[0],  proencoder_output[0]],-1)
+        #last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, bounds], -1)
+        #last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, proms], -1)
+        #last_encoder_hidden_states = self.denseBeforeDur(last_encoder_hidden_states)
 
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
         # rather than just use last_hidden_states of encoder for energy_predictor.
@@ -237,18 +244,22 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         proms,
     ):
         """Call logic."""
-        embedding_output = self.embeddings([input_ids, speaker_ids], training=False)
+        embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
         bounds = tf.expand_dims(bounds, axis=-1)
         proms = tf.expand_dims(proms, axis=-1)
-        #embedding_output = tf.concat([embedding_output, bounds], -1)
-        #embedding_output = tf.concat([embedding_output, proms], -1)
+
+
+        profeats = tf.concat([bounds, proms], -1)
 
         encoder_output = self.encoder(
-            [embedding_output, attention_mask], training=False
+            [embedding_output, attention_mask], training=training
         )
-        last_encoder_hidden_states = encoder_output[0]
-        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, bounds], -1)
-        last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, proms], -1)
+        proencoder_output = self.proencoder(
+            [profeats, attention_mask], training=training
+        )
+
+        last_encoder_hidden_states = tf.concat([encoder_output[0],  proencoder_output[0]],-1)
+
 
         # expand ratios
         speed_ratios = tf.expand_dims(speed_ratios, 1)  # [B, 1]

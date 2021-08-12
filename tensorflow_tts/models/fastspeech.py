@@ -167,6 +167,8 @@ class TFFastSpeechSelfAttention(tf.keras.layers.Layer):
         super().__init__(**kwargs)
         if encOrDec == 'dec':
           config.hidden_size = config.decoder_hidden_size
+        elif encOrDec == 'proso':
+          config.hidden_size = 2
         if config.hidden_size % config.num_attention_heads != 0:
             raise ValueError(
                 "The hidden size (%d) is not a multiple of the number of attention "
@@ -705,6 +707,7 @@ class TFFastSpeech(tf.keras.Model):
         super().__init__(**kwargs)
         self.embeddings = TFFastSpeechEmbeddings(config, name="embeddings")
         self.encoder = TFFastSpeechEncoder(config, name="encoder")
+        self.proencoder = TFFastSpeechEncoder(config, encOrDec="proso",name="proencoder")
         self.duration_predictor = TFFastSpeechDurationPredictor(
             config, name="duration_predictor"
         )

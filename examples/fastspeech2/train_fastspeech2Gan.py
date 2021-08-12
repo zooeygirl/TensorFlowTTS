@@ -134,9 +134,9 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             mel_loss_before = self.mae(mel, mel_before)
             mel_loss_after = self.mae(mel, mel_after)
             tf.config.run_functions_eagerly(True)
-            gan_loss = self.gan_loss(self.enc, self.opt_enc, mel, mel_after , 16)
+            gan_loss = GanLoss(self.enc, self.opt_enc, mel, mel_after , 16)
             loss = (
-                duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after + gan_loss
+                duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after - gan_loss
             )
 
             if self.is_mixed_precision:
@@ -333,6 +333,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
 
 
 def main():
+    tf.config.run_functions_eagerly(True)
     """Run training process."""
     parser = argparse.ArgumentParser(
         description="Train FastSpeech (See detail in tensorflow_tts/bin/train-fastspeech.py)"

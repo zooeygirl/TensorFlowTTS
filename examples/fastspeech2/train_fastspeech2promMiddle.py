@@ -115,14 +115,37 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 proms=prom,
                 training=True,
             )
+            (
+                zero_before,
+                zero_after,
+                duration_zero,
+                f0_zero,
+                energy_zero,
+            ) = self.model(
+                charactor,
+                attention_mask=tf.math.not_equal(charactor, 0),
+                speaker_ids=tf.zeros(shape=[tf.shape(mel)[0]]),
+                duration_gts=duration,
+                f0_gts=f0,
+                energy_gts=energy,
+                bounds=tf.zeros(tf.shape(bound)),
+                proms=tf.zeros(tf.shape(prom)),
+                training=True,
+            )
             log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
             duration_loss = self.mse(log_duration, duration_outputs)
+            duration_diff = self.mse(duration_zero, duration_outputs)
             f0_loss = self.mse(f0, f0_outputs)
+            f0_diff = self.mse(f0_zero, f0_outputs)
             energy_loss = self.mse(energy, energy_outputs)
+            energy_diff = self.mse(energy_zero, energy_outputs)
             mel_loss_before = self.mae(mel, mel_before)
             mel_loss_after = self.mae(mel, mel_after)
+            #mel_diff_after = self.mae(zero_after, mel_after)
+
             loss = (
-                duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after
+                tf.math.multiply(0.9,(duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after))
+                #-  tf.math.multiply(0.1,(duration_diff + f0_diff + energy_diff)) #tf.math.multiply(0.1,(mel_diff_after))
             )
 
             if self.is_mixed_precision:
@@ -275,13 +298,17 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             charactor, duration, f0, energy, mel, bound, prom
         )
 
+        zeros_before, zeros_after = self.predict(
+            charactor, duration, f0, energy, mel, tf.zeros(bound.shape), tf.zeros(prom.shape)
+        )
+
         # check directory
         dirname = os.path.join(self.config["outdir"], f"predictions/{self.steps}steps")
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        for idx, (mel_gt, mel_pred_before, mel_pred_after) in enumerate(
-            zip(mel, masked_mel_before, masked_mel_after), 1
+        for idx, (mel_gt, mel_pred_before, mel_pred_after, zeros_after) in enumerate(
+            zip(mel, masked_mel_before, masked_mel_after, zeros_after), 1
         ):
             mel_gt = tf.reshape(mel_gt, (-1, 80)).numpy()  # [length, 80]
             mel_pred_before = tf.reshape(
@@ -290,13 +317,17 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             mel_pred_after = tf.reshape(
                 mel_pred_after, (-1, 80)
             ).numpy()  # [length, 80]
+            zeros_after = tf.reshape(
+                zeros_after, (-1, 80)
+            ).numpy()  # [length, 80]
 
             # plit figure and save it
             figname = os.path.join(dirname, f"{idx}.png")
             fig = plt.figure(figsize=(10, 8))
-            ax1 = fig.add_subplot(311)
-            ax2 = fig.add_subplot(312)
-            ax3 = fig.add_subplot(313)
+            ax1 = fig.add_subplot(411)
+            ax2 = fig.add_subplot(412)
+            ax3 = fig.add_subplot(413)
+            ax4 = fig.add_subplot(414)
             im = ax1.imshow(np.rot90(mel_gt), aspect="auto", interpolation="none")
             ax1.set_title("Target Mel-Spectrogram")
             fig.colorbar(mappable=im, shrink=0.65, orientation="horizontal", ax=ax1)
@@ -310,6 +341,11 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 np.rot90(mel_pred_after), aspect="auto", interpolation="none"
             )
             fig.colorbar(mappable=im, shrink=0.65, orientation="horizontal", ax=ax3)
+            ax4.set_title("Zeros Mel-after-Spectrogram")
+            im = ax4.imshow(
+                np.rot90(zeros_after), aspect="auto", interpolation="none"
+            )
+            fig.colorbar(mappable=im, shrink=0.65, orientation="horizontal", ax=ax4)
             plt.tight_layout()
             plt.savefig(figname)
             plt.close()
@@ -479,6 +515,7 @@ def main():
     fastspeech = TFFastSpeech2promMiddle(config=FastSpeech2Config(**config["fastspeech_params"]))
     fastspeech._build()
     fastspeech.summary()
+
 
     # define trainer
     trainer = FastSpeech2Trainer(
