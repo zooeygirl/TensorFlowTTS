@@ -62,6 +62,9 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             "energy_loss",
             "mel_loss_before",
             "mel_loss_after",
+            "tripLossD",
+            "tripLossF",
+            "tripLossE",
         ]
         self.init_train_eval_metrics(self.list_metrics_name)
         self.reset_states_train()
@@ -134,17 +137,34 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             )
             log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
             duration_loss = self.mse(log_duration, duration_outputs)
-            duration_diff = self.mse(duration_zero, duration_outputs)
             f0_loss = self.mse(f0, f0_outputs)
-            f0_diff = self.mse(f0_zero, f0_outputs)
             energy_loss = self.mse(energy, energy_outputs)
-            energy_diff = self.mse(energy_zero, energy_outputs)
             mel_loss_before = self.mae(mel, mel_before)
             mel_loss_after = self.mae(mel, mel_after)
-            #mel_diff_after = self.mae(zero_after, mel_after)
+
+            margin=0.6
+
+            d_pos = tf.reduce_sum(tf.square(log_duration - duration_outputs), 1)
+            d_neg = tf.reduce_sum(tf.square(log_duration - duration_zero), 1)
+
+            tripLossD = tf.maximum(0., margin + d_pos - d_neg)
+            tripLossD = 10000*tf.reduce_mean(tripLossD)
+
+            f_pos = tf.reduce_sum(tf.square(f0 - f0_outputs), 1)
+            f_neg = tf.reduce_sum(tf.square(f0 - f0_zero), 1)
+
+            tripLossF = tf.maximum(0., margin + f_pos - f_neg)
+            tripLossF = 10000*tf.reduce_mean(tripLossF)
+
+            e_pos = tf.reduce_sum(tf.square(energy - energy_outputs), 1)
+            e_neg = tf.reduce_sum(tf.square(energy - energy_zero), 1)
+
+            tripLossE = tf.maximum(0., margin + e_pos - e_neg)
+            tripLossE = 10000*tf.reduce_mean(tripLossE)
+
 
             loss = (
-                tf.math.multiply(0.9,(duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after))
+                duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after + tripLossD + tripLossF + tripLossE
                 #-  tf.math.multiply(0.1,(duration_diff + f0_diff + energy_diff)) #tf.math.multiply(0.1,(mel_diff_after))
             )
 
@@ -168,6 +188,9 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         self.train_metrics["energy_loss"].update_state(energy_loss)
         self.train_metrics["mel_loss_before"].update_state(mel_loss_before)
         self.train_metrics["mel_loss_after"].update_state(mel_loss_after)
+        self.train_metrics["tripLossD"].update_state(tripLossD)
+        self.train_metrics["tripLossF"].update_state(tripLossF)
+        self.train_metrics["tripLossE"].update_state(tripLossE)
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
@@ -233,6 +256,23 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             proms=prom,
             training=False,
         )
+        (
+            zero_before,
+            zero_after,
+            duration_zero,
+            f0_zero,
+            energy_zero,
+            ) = self.model(
+                charactor,
+                attention_mask=tf.math.not_equal(charactor, 0),
+                speaker_ids=tf.zeros(shape=[tf.shape(mel)[0]]),
+                duration_gts=duration,
+                f0_gts=f0,
+                energy_gts=energy,
+                bounds=tf.zeros(tf.shape(bound)),
+                proms=tf.zeros(tf.shape(prom))
+            )
+
         log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
         duration_loss = self.mse(log_duration, duration_outputs)
         f0_loss = self.mse(f0, f0_outputs)
@@ -240,12 +280,35 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         mel_loss_before = self.mae(mel, mel_before)
         mel_loss_after = self.mae(mel, mel_after)
 
+        margin=0.6
+
+        d_pos = tf.reduce_sum(tf.square(log_duration - duration_outputs), 1)
+        d_neg = tf.reduce_sum(tf.square(log_duration - duration_zero), 1)
+
+        tripLossD = tf.maximum(0., margin + d_pos - d_neg)
+        tripLossD = 10000*tf.reduce_mean(tripLossD)
+
+        f_pos = tf.reduce_sum(tf.square(f0 - f0_outputs), 1)
+        f_neg = tf.reduce_sum(tf.square(f0 - f0_zero), 1)
+
+        tripLossF = tf.maximum(0., margin + f_pos - f_neg)
+        tripLossF = 10000*tf.reduce_mean(tripLossF)
+
+        e_pos = tf.reduce_sum(tf.square(energy - energy_outputs), 1)
+        e_neg = tf.reduce_sum(tf.square(energy - energy_zero), 1)
+
+        tripLossE = tf.maximum(0., margin + e_pos - e_neg)
+        tripLossE = 10000*tf.reduce_mean(tripLossE)
+
         # accumulate loss into metrics
         self.eval_metrics["duration_loss"].update_state(duration_loss)
         self.eval_metrics["f0_loss"].update_state(f0_loss)
         self.eval_metrics["energy_loss"].update_state(energy_loss)
         self.eval_metrics["mel_loss_before"].update_state(mel_loss_before)
         self.eval_metrics["mel_loss_after"].update_state(mel_loss_after)
+        self.eval_metrics["tripLossD"].update_state(tripLossD)
+        self.eval_metrics["tripLossF"].update_state(tripLossF)
+        self.eval_metrics["tripLossE"].update_state(tripLossE)
 
     def _check_log_interval(self):
         """Log to tensorboard."""

@@ -160,20 +160,20 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
         bounds = tf.expand_dims(bounds, axis=-1)
         proms = tf.expand_dims(proms, axis=-1)
-        #embedding_output = tf.concat([embedding_output, bounds], -1)
-        #embedding_output = tf.concat([embedding_output, proms], -1)
+        embedding_output = tf.concat([embedding_output, bounds], -1)
+        embedding_output = tf.concat([embedding_output, proms], -1)
 
-        profeats = tf.concat([bounds, proms], -1)
+        #profeats = tf.concat([bounds, proms], -1)
 
         encoder_output = self.encoder(
             [embedding_output, attention_mask], training=training
         )
-        proencoder_output = self.proencoder(
-            [profeats, attention_mask], training=training
-        )
+        #proencoder_output = self.proencoder(
+        #    [profeats, attention_mask], training=training
+        #)
 
-        #last_encoder_hidden_states = encoder_output[0]
-        last_encoder_hidden_states = tf.concat([encoder_output[0],  proencoder_output[0]],-1)
+        last_encoder_hidden_states = encoder_output[0]
+        #last_encoder_hidden_states = tf.concat([encoder_output[0],  proencoder_output[0]],-1)
         #last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, bounds], -1)
         #last_encoder_hidden_states = tf.concat([last_encoder_hidden_states, proms], -1)
         #last_encoder_hidden_states = self.denseBeforeDur(last_encoder_hidden_states)
@@ -244,22 +244,24 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         proms,
     ):
         """Call logic."""
-        embedding_output = self.embeddings([input_ids, speaker_ids], training=training)
+        embedding_output = self.embeddings([input_ids, speaker_ids])
         bounds = tf.expand_dims(bounds, axis=-1)
         proms = tf.expand_dims(proms, axis=-1)
+        embedding_output = tf.concat([embedding_output, bounds], -1)
+        embedding_output = tf.concat([embedding_output, proms], -1)
 
 
-        profeats = tf.concat([bounds, proms], -1)
+        #profeats = tf.concat([bounds, proms], -1)
 
         encoder_output = self.encoder(
-            [embedding_output, attention_mask], training=training
+            [embedding_output, attention_mask]
         )
-        proencoder_output = self.proencoder(
-            [profeats, attention_mask], training=training
-        )
+        #proencoder_output = self.proencoder(
+        #    [profeats, attention_mask]
+        #)
 
-        last_encoder_hidden_states = tf.concat([encoder_output[0],  proencoder_output[0]],-1)
-
+        #last_encoder_hidden_states = tf.concat([encoder_output[0],  proencoder_output[0]],-1)
+        last_encoder_hidden_states = encoder_output[0]
 
         # expand ratios
         speed_ratios = tf.expand_dims(speed_ratios, 1)  # [B, 1]
