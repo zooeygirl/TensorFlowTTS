@@ -707,7 +707,7 @@ class TFFastSpeech(tf.keras.Model):
         super().__init__(**kwargs)
         self.embeddings = TFFastSpeechEmbeddings(config, name="embeddings")
         self.encoder = TFFastSpeechEncoder(config, name="encoder")
-        self.proencoder = TFFastSpeechEncoder(config, encOrDec="proso",name="proencoder")
+        #self.proencoder = TFFastSpeechEncoder(config, encOrDec="proso",name="proencoder")
         self.duration_predictor = TFFastSpeechDurationPredictor(
             config, name="duration_predictor"
         )
