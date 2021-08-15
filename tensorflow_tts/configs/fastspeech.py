@@ -53,7 +53,7 @@ class FastSpeechConfig(object):
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.encoder_hidden_size = hidden_size
-        self.decoder_hidden_size = hidden_size+2
+        self.decoder_hidden_size = hidden_size#+2
         self.num_hidden_layers = num_hidden_layers
         self.num_attention_heads = num_attention_heads
         self.hidden_act = hidden_act
