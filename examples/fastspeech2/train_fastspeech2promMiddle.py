@@ -67,10 +67,12 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             "energy_no",
             "f0_no",
             "dur_no",
+            "max_f0",
+            "min_f0",
             #"tripLossD",
             #"tripLossF",
             #"tripLossE",
-            #"tripLossFZ",
+            "tripLossFZ",
         ]
         self.init_train_eval_metrics(self.list_metrics_name)
         self.reset_states_train()
@@ -177,6 +179,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_lossNo = self.mse(log_duration, duration_no)
             f0_loss = self.mse(f0, f0_outputs)
             f0_lossNo = self.mse(f0, f0_no)
+            maxf0 = self.mse(tf.reduce_max(f0, axis=1), tf.reduce_max(f0_outputs, axis=1))
+            minf0 = self.mse(tf.reduce_min(f0, axis=1), tf.reduce_min(f0_outputs, axis=1))
             energy_loss = self.mse(energy, energy_outputs)
             energy_lossNo = self.mse(energy, energy_no)
             mel_loss_before = self.mae(mel, mel_before)
@@ -198,16 +202,20 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             f_pos = tf.reduce_sum(tf.square(f0 - f0_outputs), 1)
             f_neg = tf.reduce_sum(tf.square(f0 - f0_zero), 1)
 
-
+            """
             f_allzero = tf.zeros(shape=tf.shape(f0), dtype=tf.dtypes.float32)
             f_zeroDistP = tf.reduce_sum(tf.square(f_allzero - f0_zero), 1)
             f_zeroDistN = tf.reduce_sum(tf.square(f_allzero - f0_outputs), 1)
 
+            tripLossFZ = tf.maximum(0., 0.1 + f_zeroDistP - f_zeroDistN)
+            tripLossFZ = tf.reduce_mean(tripLossFZ)
+
+            """
+
             tripLossF = tf.maximum(0., margin + f_pos - f_neg)
             tripLossF = tf.reduce_mean(tripLossF)
 
-            tripLossFZ = tf.maximum(0., 0.1 + f_zeroDistP - f_zeroDistN)
-            tripLossFZ = tf.reduce_mean(tripLossFZ)
+
 
             margin=0.2
 
@@ -221,7 +229,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             loss = (
                 #tf.math.multiply(2.0, duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after) + tf.math.multiply(1.0, tripLossD + tripLossF + tripLossE)
                 #tf.math.multiply(2.0, duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after) + tf.math.multiply(1.0, 1.5*tripLossF+tripLossFZ)
-                duration_loss + duration_lossNo + f0_loss + f0_lossNo + energy_loss + energy_lossNo + mel_loss_before + mel_loss_after + prosLoss + prosLossZero
+                maxf0 + minf0 + tripLossFZ+ duration_loss + duration_lossNo + f0_loss + f0_lossNo + energy_loss + energy_lossNo + mel_loss_before + mel_loss_after #+ prosLoss + prosLossZero
             )
 
             if self.is_mixed_precision:
@@ -244,15 +252,17 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         self.train_metrics["energy_loss"].update_state(energy_loss)
         self.train_metrics["mel_loss_before"].update_state(mel_loss_before)
         self.train_metrics["mel_loss_after"].update_state(mel_loss_after)
-        self.train_metrics["prosLoss"].update_state(prosLoss)
-        self.train_metrics["prosLossZero"].update_state(prosLossZero)
+        #self.train_metrics["prosLoss"].update_state(prosLoss)
+        #self.train_metrics["prosLossZero"].update_state(prosLossZero)
         self.train_metrics["energy_no"].update_state(energy_lossNo)
         self.train_metrics["f0_no"].update_state(f0_lossNo)
         self.train_metrics["dur_no"].update_state(duration_lossNo)
+        self.train_metrics["max_f0"].update_state(maxf0)
+        self.train_metrics["min_f0"].update_state(minf0)
         #self.train_metrics["tripLossD"].update_state(tripLossD)
         #self.train_metrics["tripLossF"].update_state(tripLossF)
         #self.train_metrics["tripLossE"].update_state(tripLossE)
-        #self.train_metrics["tripLossFZ"].update_state(tripLossFZ)
+        self.train_metrics["tripLossFZ"].update_state(tripLossFZ)
 
     def _eval_epoch(self):
         """Evaluate model one epoch."""
@@ -350,6 +360,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         mel_loss_after = self.mae(mel, mel_after)
         prosLoss = self.mse(proso, predPros)
         prosLossZero = self.mse(zeroPro, predProsZero)
+        maxf0 = self.mse(tf.reduce_max(f0, axis=1), tf.reduce_max(f0_outputs, axis=1))
+        minf0 = self.mse(tf.reduce_min(f0, axis=1), tf.reduce_min(f0_outputs, axis=1))
 
         """
         margin=0.2
@@ -394,6 +406,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         self.eval_metrics["mel_loss_after"].update_state(mel_loss_after)
         self.eval_metrics["prosLoss"].update_state(prosLoss)
         self.eval_metrics["prosLossZero"].update_state(prosLossZero)
+        self.eval_metrics["max_f0"].update_state(maxf0)
+        self.eval_metrics["min_f0"].update_state(minf0)
         #self.eval_metrics["tripLossD"].update_state(tripLossD)
         #self.eval_metrics["tripLossF"].update_state(tripLossF)
         #self.eval_metrics["tripLossE"].update_state(tripLossE)
@@ -667,6 +681,8 @@ def main():
     fastspeech = TFFastSpeech2promMiddle(config=FastSpeech2Config(**config["fastspeech_params"]))
     fastspeech._build()
     fastspeech.summary()
+
+    #fastspeech.load_weights('/content/fastspeech2-150k.h5', by_name=True, skip_mismatch=True)
 
 
     # define trainer
