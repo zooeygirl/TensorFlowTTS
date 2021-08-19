@@ -109,16 +109,18 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         ],
     )
 
-    def invert(A):
-        zero = tf.constant(0, dtype=tf.float32)
-        where = tf.not_equal(A, zero)
-        indices = tf.where(where)
-        B = tf.boolean_mask(tensor, where)
-        updates = tf.map_fn(fn=lambda t: 2.5/2.5**t, elems=B)
-        A = tf.tensor_scatter_nd_update(A, indices, updates)
-        return A
+
 
     def _one_step_fastspeech2(self, charactor, duration, f0, energy, mel, bound, prom):
+        def invert(A):
+          zero = tf.constant(0, dtype=tf.float32)
+          where = tf.not_equal(A, zero)
+          indices = tf.where(where)
+          B = tf.boolean_mask(A, where)
+          updates = tf.map_fn(fn=lambda t: 2.5/2.5**t, elems=B)
+          A = tf.tensor_scatter_nd_update(A, indices, updates)
+          return A
+
         with tf.GradientTape() as tape:
             (
                 mel_before,
@@ -127,6 +129,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 f0_outputs,
                 energy_outputs,
                 predPros,
+                _,
             ) = self.model(
                 charactor,
                 attention_mask=tf.math.not_equal(charactor, 0),
@@ -139,12 +142,14 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 training=True,
             )
             #no text, just prosody features
+            """
             ( no_before,
               no_after,
               duration_no,
               f0_no,
               energy_no,
               predProsNo,
+              _,
             ) = self.model(
               tf.zeros(tf.shape(charactor), tf.int32),
               attention_mask=tf.math.not_equal(charactor, 0),
@@ -156,6 +161,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
               proms=prom,
               training=True,
             )
+            """
             #prosody inputs are zero
             (
                 zero_before,
@@ -164,6 +170,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 f0_zero,
                 energy_zero,
                 predProsZero,
+                _,
             ) = self.model(
                 charactor,
                 attention_mask=tf.math.not_equal(charactor, 0),
@@ -183,6 +190,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 f0_inv,
                 energy_inv,
                 predProsInv,
+                _,
             ) = self.model(
                 charactor,
                 attention_mask=tf.math.not_equal(charactor, 0),
@@ -232,13 +240,13 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             d_neg = tf.reduce_sum(tf.square(log_duration - duration_inv), 1)
 
             tripLossD1 = tf.maximum(0., margin + d_pos - d_neg)
-            tripLossD1 = tf.reduce_mean(tripLossD)
+            tripLossD1 = tf.reduce_mean(tripLossD1)
 
             d_pos = tf.reduce_sum(tf.square(duration_inv - duration_zero), 1)
             d_neg = tf.reduce_sum(tf.square(duration_inv - log_duration), 1)
 
             tripLossD2 = tf.maximum(0., margin + d_pos - d_neg)
-            tripLossD2 = tf.reduce_mean(tripLossD)
+            tripLossD2 = tf.reduce_mean(tripLossD2)
 
             """
 
@@ -365,6 +373,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             f0_outputs,
             energy_outputs,
             predPros,
+            _,
         ) = self.model(
             charactor,
             attention_mask=tf.math.not_equal(charactor, 0),
@@ -383,6 +392,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             f0_zero,
             energy_zero,
             predProsZero,
+            _,
             ) = self.model(
                 charactor,
                 attention_mask=tf.math.not_equal(charactor, 0),
@@ -486,7 +496,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
     )
     def predict(self, charactor, duration, f0, energy, mel, bound, prom):
         """Predict."""
-        mel_before, mel_after, _, _, _, _ = self.model(
+        mel_before, mel_after, _, _, _, _, _ = self.model(
             charactor,
             attention_mask=tf.math.not_equal(charactor, 0),
             speaker_ids=tf.zeros(shape=[tf.shape(mel)[0]]),
