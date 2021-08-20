@@ -506,8 +506,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        for idx, (mel_gt, mel_pred_before, mel_pred_after, zeros_after) in enumerate(
-            zip(mel, masked_mel_before, masked_mel_after, zeros_after), 1
+        for idx, (mel_gt, mel_pred_before, mel_pred_after) in enumerate(
+            zip(mel, masked_mel_before, masked_mel_after), 1
         ):
             mel_gt = tf.reshape(mel_gt, (-1, 80)).numpy()  # [length, 80]
             mel_pred_before = tf.reshape(
@@ -709,7 +709,7 @@ def main():
 
     #fastspeech.load_weights('/content/drive/MyDrive/LJSpeech/promMiddle/checkpoints/model-4025.h5', by_name=True, skip_mismatch=True)
 
-    fastspeech.load_weights('/content/fastspeech2-150k.h5', by_name=True, skip_mismatch=True)
+    #fastspeech.load_weights('/content/fastspeech2-150k.h5', by_name=True, skip_mismatch=True)
 
 
     # define trainer
