@@ -69,8 +69,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             #"dur_no",
             #"max_f0",
             #"min_f0",
-            "tripLossD1",
-            "tripLossD2",
+            #"tripLossD1",
+            #"tripLossD2",
             #"tripLossF",
             #"tripLossE",
             #"tripLossFZ",
@@ -112,14 +112,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
 
 
     def _one_step_fastspeech2(self, charactor, duration, f0, energy, mel, bound, prom):
-        def invert(A):
-          zero = tf.constant(0, dtype=tf.float32)
-          where = tf.not_equal(A, zero)
-          indices = tf.where(where)
-          B = tf.boolean_mask(A, where)
-          updates = tf.map_fn(fn=lambda t: 2.5/2.5**t, elems=B)
-          A = tf.tensor_scatter_nd_update(A, indices, updates)
-          return A
+
 
         with tf.GradientTape() as tape:
             (
@@ -128,8 +121,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 duration_outputs,
                 f0_outputs,
                 energy_outputs,
-                predPros,
-                _,
+                #predPros,
+                #_,
             ) = self.model(
                 charactor,
                 attention_mask=tf.math.not_equal(charactor, 0),
@@ -161,7 +154,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
               proms=prom,
               training=True,
             )
-            """
+
             #prosody inputs are zero
             (
                 zero_before,
@@ -169,8 +162,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 duration_zero,
                 f0_zero,
                 energy_zero,
-                predProsZero,
-                _,
+                #predProsZero,
+                #_,
             ) = self.model(
                 charactor,
                 attention_mask=tf.math.not_equal(charactor, 0),
@@ -182,26 +175,6 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 proms=tf.zeros(tf.shape(prom)),
                 training=True,
             )
-            #invert prosody features
-            (
-                inv_before,
-                inv_after,
-                duration_inv,
-                f0_inv,
-                energy_inv,
-                predProsInv,
-                _,
-            ) = self.model(
-                charactor,
-                attention_mask=tf.math.not_equal(charactor, 0),
-                speaker_ids=tf.zeros(shape=[tf.shape(mel)[0]]),
-                duration_gts=duration,
-                f0_gts=f0,
-                energy_gts=energy,
-                bounds=invert(bound),
-                proms=invert(prom),
-                training=True,
-            )
 
 
 
@@ -209,6 +182,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             prom = tf.expand_dims(prom, axis=-1)
             proso = tf.concat([bound, prom], -1)
             zeroPro = tf.zeros(tf.shape(proso))
+            """
 
 
             log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
@@ -222,6 +196,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             #energy_lossNo = self.mse(energy, energy_no)
             mel_loss_before = self.mae(mel, mel_before)
             mel_loss_after = self.mae(mel, mel_after)
+
             #prosLoss = self.mse(proso, predPros)
             #prosLossZero = self.mse(zeroPro, predProsZero)
 
@@ -233,9 +208,9 @@ class FastSpeech2Trainer(FastSpeechTrainer):
 
             tripLossD = tf.maximum(0., margin + d_pos - d_neg)
             tripLossD = tf.reduce_mean(tripLossD)
-            """
 
-            margin=0.2
+
+            margin=0.1
             d_pos = tf.reduce_sum(tf.square(log_duration - duration_zero), 1)
             d_neg = tf.reduce_sum(tf.square(log_duration - duration_inv), 1)
 
@@ -248,7 +223,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             tripLossD2 = tf.maximum(0., margin + d_pos - d_neg)
             tripLossD2 = tf.reduce_mean(tripLossD2)
 
-            """
+
 
             margin=0.2
 
@@ -283,7 +258,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 #tf.math.multiply(2.0, duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after) + tf.math.multiply(1.0, tripLossD + tripLossF + tripLossE)
                 #tf.math.multiply(2.0, duration_loss + f0_loss + energy_loss + mel_loss_before + mel_loss_after) + tf.math.multiply(1.0, 1.5*tripLossF+tripLossFZ)
                 #maxf0 + minf0 + tripLossFZ+ duration_loss + duration_lossNo + f0_loss + f0_lossNo + energy_loss + energy_lossNo + mel_loss_before + mel_loss_after #+ prosLoss + prosLossZero
-                tripLossD1 + tripLossD1 + duration_loss + f0_loss + energy_loss +  mel_loss_before + mel_loss_after
+                duration_loss + f0_loss + energy_loss +  mel_loss_before + mel_loss_after
             )
 
             if self.is_mixed_precision:
@@ -313,8 +288,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
         #self.train_metrics["dur_no"].update_state(duration_lossNo)
         #self.train_metrics["max_f0"].update_state(maxf0)
         #self.train_metrics["min_f0"].update_state(minf0)
-        self.train_metrics["tripLossD1"].update_state(tripLossD1)
-        self.train_metrics["tripLossD2"].update_state(tripLossD2)
+        #self.train_metrics["tripLossD1"].update_state(tripLossD1)
+        #self.train_metrics["tripLossD2"].update_state(tripLossD2)
         #self.train_metrics["tripLossF"].update_state(tripLossF)
         #self.train_metrics["tripLossE"].update_state(tripLossE)
         #self.train_metrics["tripLossFZ"].update_state(tripLossFZ)
@@ -372,8 +347,8 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             duration_outputs,
             f0_outputs,
             energy_outputs,
-            predPros,
-            _,
+            #predPros,
+            #_,
         ) = self.model(
             charactor,
             attention_mask=tf.math.not_equal(charactor, 0),
@@ -385,6 +360,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             proms=prom,
             training=False,
         )
+        """
         (
             zero_before,
             zero_after,
@@ -404,10 +380,12 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 proms=tf.zeros(tf.shape(prom))
             )
 
+
         bound = tf.expand_dims(bound, axis=-1)
         prom = tf.expand_dims(prom, axis=-1)
         proso = tf.concat([bound, prom], -1)
         zeroPro = tf.zeros(tf.shape(proso))
+        """
 
         log_duration = tf.math.log(tf.cast(tf.math.add(duration, 1), tf.float32))
         duration_loss = self.mse(log_duration, duration_outputs)
@@ -496,7 +474,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
     )
     def predict(self, charactor, duration, f0, energy, mel, bound, prom):
         """Predict."""
-        mel_before, mel_after, _, _, _, _, _ = self.model(
+        mel_before, mel_after, _, _, _ = self.model(
             charactor,
             attention_mask=tf.math.not_equal(charactor, 0),
             speaker_ids=tf.zeros(shape=[tf.shape(mel)[0]]),
@@ -521,9 +499,7 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             charactor, duration, f0, energy, mel, bound, prom
         )
 
-        zeros_before, zeros_after = self.predict(
-            charactor, duration, f0, energy, mel, tf.zeros(bound.shape), tf.zeros(prom.shape)
-        )
+
 
         # check directory
         dirname = os.path.join(self.config["outdir"], f"predictions/{self.steps}steps")
@@ -540,17 +516,14 @@ class FastSpeech2Trainer(FastSpeechTrainer):
             mel_pred_after = tf.reshape(
                 mel_pred_after, (-1, 80)
             ).numpy()  # [length, 80]
-            zeros_after = tf.reshape(
-                zeros_after, (-1, 80)
-            ).numpy()  # [length, 80]
+
 
             # plit figure and save it
             figname = os.path.join(dirname, f"{idx}.png")
             fig = plt.figure(figsize=(10, 8))
-            ax1 = fig.add_subplot(411)
-            ax2 = fig.add_subplot(412)
-            ax3 = fig.add_subplot(413)
-            ax4 = fig.add_subplot(414)
+            ax1 = fig.add_subplot(311)
+            ax2 = fig.add_subplot(312)
+            ax3 = fig.add_subplot(313)
             im = ax1.imshow(np.rot90(mel_gt), aspect="auto", interpolation="none")
             ax1.set_title("Target Mel-Spectrogram")
             fig.colorbar(mappable=im, shrink=0.65, orientation="horizontal", ax=ax1)
@@ -564,11 +537,6 @@ class FastSpeech2Trainer(FastSpeechTrainer):
                 np.rot90(mel_pred_after), aspect="auto", interpolation="none"
             )
             fig.colorbar(mappable=im, shrink=0.65, orientation="horizontal", ax=ax3)
-            ax4.set_title("Zeros Mel-after-Spectrogram")
-            im = ax4.imshow(
-                np.rot90(zeros_after), aspect="auto", interpolation="none"
-            )
-            fig.colorbar(mappable=im, shrink=0.65, orientation="horizontal", ax=ax4)
             plt.tight_layout()
             plt.savefig(figname)
             plt.close()
@@ -739,7 +707,9 @@ def main():
     fastspeech._build()
     fastspeech.summary()
 
-    #fastspeech.load_weights('/content/fastspeech2-150k.h5', by_name=True, skip_mismatch=True)
+    #fastspeech.load_weights('/content/drive/MyDrive/LJSpeech/promMiddle/checkpoints/model-4025.h5', by_name=True, skip_mismatch=True)
+
+    fastspeech.load_weights('/content/fastspeech2-150k.h5', by_name=True, skip_mismatch=True)
 
 
     # define trainer

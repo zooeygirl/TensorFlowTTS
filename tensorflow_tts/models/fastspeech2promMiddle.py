@@ -101,7 +101,7 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         self.duration_predictor = TFFastSpeechVariantPredictor(
             config, name="duration_predictor"
         )
-        self.predictInput = tf.keras.layers.Dense(384)
+        #self.predictInput = tf.keras.layers.LSTM(2, activation='relu', return_sequences=True, name='propred')
 
         # define f0_embeddings and energy_embeddings
         self.f0_embeddings = tf.keras.layers.Conv1D(
@@ -172,7 +172,6 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
 
         last_encoder_hidden_states = encoder_output[0]
 
-        predChar = self.predictInput(last_encoder_hidden_states)
 
         # energy predictor, here use last_encoder_hidden_states, u can use more hidden_states layers
         # rather than just use last_hidden_states of encoder for energy_predictor.
@@ -186,6 +185,8 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         energy_outputs = self.energy_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask], training=training
         )
+
+        #predChar = self.predictInput(tf.expand_dims(duration_outputs, -1))
 
         f0_embedding = self.f0_embeddings(
             tf.expand_dims(f0_gts, 2)
@@ -223,7 +224,7 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
             self.postnet([mel_before, encoder_masks], training=training) + mel_before
         )
 
-        outputs = (mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs, predChar, embedding_output)
+        outputs = (mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs)#, predChar, embedding_output)
         return outputs
 
 
@@ -259,7 +260,7 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         #last_encoder_hidden_states = tf.concat([encoder_output[0],  proencoder_output[0]],-1)
         last_encoder_hidden_states = encoder_output[0]
 
-        predChar = self.predictInput(last_encoder_hidden_states)
+
 
         # expand ratios
         speed_ratios = tf.expand_dims(speed_ratios, 1)  # [B, 1]
@@ -275,6 +276,7 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
         duration_outputs = tf.cast(
             tf.math.round(duration_outputs * speed_ratios), tf.int32
         )
+        #predChar = self.predictInput(tf.expand_dims(duration_outputs, -1))
 
         f0_outputs = self.f0_predictor(
             [last_encoder_hidden_states, speaker_ids, attention_mask], training=False
@@ -318,6 +320,6 @@ class TFFastSpeech2promMiddle(TFFastSpeech):
             self.postnet([mel_before, encoder_masks], training=False) + mel_before
         )
 
-        outputs = (mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs, predChar, embedding_output)
+        outputs = (mel_before, mel_after, duration_outputs, f0_outputs, energy_outputs)#, predChar, embedding_output)
 
         return outputs
