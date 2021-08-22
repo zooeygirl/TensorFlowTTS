@@ -20,6 +20,7 @@ import random
 import itertools
 import numpy as np
 import pickle
+import glob
 
 import tensorflow as tf
 
@@ -28,10 +29,10 @@ from tensorflow_tts.datasets.abstract_dataset import AbstractDataset
 from tensorflow_tts.utils import find_files
 from tensorflow_tts.utils import remove_outlier
 
-with open('/content/drive/MyDrive/LJSpeech/bounds.pickle', 'rb') as handle:
+with open('/content/drive/MyDrive/LJSpeech/boundsW.pickle', 'rb') as handle:
     boundInputs = pickle.load(handle)
 
-with open('/content/drive/MyDrive/LJSpeech/proms.pickle', 'rb') as handle:
+with open('/content/drive/MyDrive/LJSpeech/promsW.pickle', 'rb') as handle:
     promInputs = pickle.load(handle)
 
 def getSpaces(char,dur, mel, bound):
@@ -110,10 +111,16 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         """
         # find all of charactor and mel files.
         charactor_files = sorted(find_files(root_dir, charactor_query))
+        charactor_files = charactor_files + sorted(glob.glob("/content/drive/MyDrive/warpedProsody/ids/*"))
+        wcharactor_files = sorted(glob.glob("/content/drive/MyDrive/warpedProsody/ids/*"))
         mel_files = sorted(find_files(root_dir, mel_query))
+        mel_files = mel_files + sorted(glob.glob("/content/drive/MyDrive/warpedProsody/feats/*"))
         duration_files = sorted(find_files(root_dir, duration_query))
+        duration_files = duration_files + sorted(glob.glob("/content/drive/MyDrive/warpedProsody/durations/*"))
         f0_files = sorted(find_files(root_dir, f0_query))
+        f0_files = f0_files + sorted(glob.glob("/content/drive/MyDrive/warpedProsody/f0/*"))
         energy_files = sorted(find_files(root_dir, energy_query))
+        energy_files = energy_files + sorted(glob.glob("/content/drive/MyDrive/warpedProsody/energy/*"))
         # filter by threshold
         if mel_length_threshold is not None:
             mel_lengths = [mel_load_fn(f).shape[0] for f in mel_files]
@@ -185,6 +192,7 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         if ".npy" in charactor_query:
             suffix = charactor_query[1:]
             utt_ids = [os.path.basename(f).replace(suffix, "") for f in charactor_files]
+            #utt_ids = utt_ids + [os.path.basename(f).replace(".npy", "") for f in wcharactor_files]
 
         # set global params
         self.utt_ids = utt_ids
@@ -204,8 +212,8 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
         self.energy_stat = np.load(energy_stat)
         self.max_f0_embeddings = max_f0_embeddings
         self.max_energy_embeddings = max_energy_embeddings
-        self.boundInputs = [boundInputs[u] for u in utt_ids]
-        self.promInputs = [promInputs[u] for u in utt_ids]
+        self.boundInputs = [boundInputs[u.replace(".npy", "")] for u in utt_ids]
+        self.promInputs = [promInputs[u.replace(".npy", "")] for u in utt_ids]
 
     def get_args(self):
         return [self.utt_ids]
