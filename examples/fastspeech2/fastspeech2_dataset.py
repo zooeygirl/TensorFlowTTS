@@ -35,15 +35,21 @@ with open('/content/drive/MyDrive/LJSpeech/boundsW.pickle', 'rb') as handle:
 with open('/content/drive/MyDrive/LJSpeech/promsW.pickle', 'rb') as handle:
     promInputs = pickle.load(handle)
 
-def getSpaces(char,dur, mel, bound):
-    spaces = np.where(char == 11)[0]
+
+def getSpaces(char,dur, mel, bound, prom):
+  spaces = np.where(char == 11)[0]
+  if len(spaces)>0:
     stopLoc = random.choice(spaces)
     melDur = np.sum(dur[:stopLoc])
     mel = mel[:melDur, :]
     char[stopLoc] = 148
     char[stopLoc+1:] = 0
     bound[stopLoc+1:] = 0
-    return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), bound.astype(np.float32)]
+    prom[stopLoc+1:] = 0
+    dur[stopLoc:] = 0
+    return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), bound.astype(np.float32), prom.astype(np.float32)]
+  else:
+    return [char.astype(np.int32) , dur.astype(np.int32), mel.astype(np.float32), bound.astype(np.float32), prom.astype(np.float32)]
 
 
 def tf_getSpaces(char, dur, mel, bound):
@@ -245,13 +251,15 @@ class CharactorDurationF0EnergyMelDataset(AbstractDataset):
 
             duration = tf.concat([duration, [0]],0)
 
+    
             if incremental==True:
 
-                outputs = tf_getSpaces(charactor, duration, mel, bound)
+                outputs = tf_getSpaces(charactor, duration, mel, bound, prom)
                 charactor = outputs[0]
                 duration = outputs[1]
                 mel = outputs[2]
                 bound = outputs[3]
+                prom = outputs[4]
 
 
             f0 = self._norm_mean_std(f0, self.f0_stat[0], self.f0_stat[1])
